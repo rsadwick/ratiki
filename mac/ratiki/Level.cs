@@ -470,7 +470,8 @@ namespace Platformer
                 {
                     //Make player move with tile if the player is on top of tile
                     player.Position += enemy.Velocity;
-                }
+					Console.WriteLine (player.Position);
+                } 
 
                 // Enemy collisions: if enemy collides with player - power up or not:
                 if (enemy.IsAlive && enemy.BoundingRectangle.Intersects(Player.BoundingRectangle))
@@ -491,8 +492,6 @@ namespace Platformer
         {
             enemy.OnKilled(killedBy);
         }
-
-
 
         /// <summary>
         /// Called when a gem is collected.
@@ -515,6 +514,7 @@ namespace Platformer
                 {
                     //Make player move with tile if the player is on top of tile
                     player.Position += tile.Velocity;
+					Console.WriteLine (player.Position);
                 }
             }
         }

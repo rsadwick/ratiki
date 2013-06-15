@@ -103,7 +103,7 @@ namespace Platformer
         private const float AirDragFactor = 0.58f;
 
         // Constants for controlling vertical movement
-        private float MaxJumpTime = 0.80f;
+        private float MaxJumpTime = 0.40f;
         private const float JumpLaunchVelocity = -2600.0f;
         private const float GravityAcceleration = 2600.0f;
         private const float MaxFallSpeed = 450.0f;
@@ -329,8 +329,6 @@ namespace Platformer
 
             Vector2 previousPosition = Position;
 
-            bool isHeld;
-
             // Base velocity is a combination of horizontal movement control and
             // acceleration downward due to gravity.
             if (IsCharged)
@@ -338,6 +336,10 @@ namespace Platformer
                 velocity.X += movement * MoveAcceleration * elapsed * 2;
 
             }
+			else if(IsPoweredUp)
+			{
+				velocity.X += movement * MoveAcceleration * elapsed * 2;
+			}
             else
             {
                 velocity.X += movement * MoveAcceleration * elapsed;
@@ -392,11 +394,9 @@ namespace Platformer
                 }
             }
 
-
             else
             {
                 IsCharged = false;
-                MaxJumpTime = 0.50f;
                 holdTimer = 0.0f;
                 MaxJumpTime = 0.40f;
                 JumpControlPower = 0.09f;
