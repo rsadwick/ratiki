@@ -20,18 +20,22 @@ namespace Platformer
             ScrollRate = scrollRate;
         }
 
-        public void Draw(SpriteBatch spriteBatch, float cameraPosition)
+        public void Draw(SpriteBatch spriteBatch, float cameraPositionX, float cameraPositionY, int Height)
         {
+			float x = cameraPositionX * ScrollRate;
+			float y = Height * ScrollRate;
             //assume each segment is the same width:
             int segementWidth = Textures[0].Width;
 
             //calculate which segments to draw and how much to offet them:
-            float x = cameraPosition * ScrollRate;
+
             int leftSegment = (int)Math.Floor(x / segementWidth);
             int rightSegment = leftSegment + 1;
             x = (x / segementWidth - leftSegment) * -segementWidth;
-            spriteBatch.Draw(Textures[leftSegment % Textures.Length], new Vector2(x, 0.0f), Color.White);
-            spriteBatch.Draw(Textures[rightSegment % Textures.Length], new Vector2(x + segementWidth, 0.0f), Color.White);
+            //spriteBatch.Draw(Textures[leftSegment % Textures.Length], new Vector2(x, 0.0f), Color.White);
+            //spriteBatch.Draw(Textures[rightSegment % Textures.Length], new Vector2(x + segementWidth, 0.0f), Color.White);
+			spriteBatch.Draw(Textures[leftSegment % Textures.Length], new Vector2(x, -y), Color.White);  
+			spriteBatch.Draw(Textures[rightSegment % Textures.Length], new Vector2(x + segementWidth, -y), Color.White);
         }
     }
 }

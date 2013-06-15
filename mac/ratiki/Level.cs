@@ -29,7 +29,8 @@ namespace Platformer
         // Physical structure of the level.
         private Tile[,] tiles;
         private Layer[] layers;
-        private float cameraPosition;
+        private float cameraPositionX;
+		public float cameraPositionY;
         const float fadeTime = 12.0f;  // TODO: Change this value to your liking. Bigger numbers equal more smoothing.
         const float smoothingFactor = (1.0f / fadeTime) * 60.0f;
         // The layer which entities are drawn on top of.
@@ -558,14 +559,21 @@ namespace Platformer
         /// </summary>
         public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
         {
+			int bottom = (Height * Tile.Height);
+			bottom = Math.Min(bottom, Height);
+			bottom -= Tile.Height;
+
             spriteBatch.Begin();
             for (int i = 0; i <= EntityLayer; ++i)
-                layers[i].Draw(spriteBatch, cameraPosition);
+                layers[i].Draw(spriteBatch, cameraPositionX, cameraPositionY, bottom);
             spriteBatch.End();
 
             ScrollCamera(spriteBatch.GraphicsDevice.Viewport);
-            Matrix cameraTransform = Matrix.CreateTranslation(-cameraPosition, 0.0f, 0.0f);
-            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.LinearClamp, DepthStencilState.Default,
+           // Matrix cameraTransform = Matrix.CreateTranslation(-cameraPositionX, 0.0f, 0.0f);
+			Matrix cameraTransform = Matrix.CreateTranslation(-cameraPositionX, -cameraPositionY, 0.0f);
+            
+
+			spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.LinearClamp, DepthStencilState.Default,
                               RasterizerState.CullCounterClockwise, null, cameraTransform);
 
             DrawTiles(spriteBatch);
@@ -585,31 +593,51 @@ namespace Platformer
 
             spriteBatch.Begin();
             for (int i = EntityLayer + 1; i < layers.Length; ++i)
-                layers[i].Draw(spriteBatch, cameraPosition);
+                layers[i].Draw(spriteBatch, cameraPositionX, cameraPositionY, bottom);
             spriteBatch.End();
         }
 
         private void ScrollCamera(Viewport viewport)
         {
             const float ViewMargin = 0.35f;
+			const float TopMargin = 0.3f;
+			const float BottomMargin = 0.1f;
 
             //calculate the edges of the screen:
             float marginWidth = viewport.Width * ViewMargin;
-            float marginLeft = cameraPosition + marginWidth;
-            float marginRight = cameraPosition + viewport.Width - marginWidth;
+            float marginLeft = cameraPositionX + marginWidth;
+            float marginRight = cameraPositionX + viewport.Width - marginWidth;
+
+			//height for Y:
+			float marginTop = cameraPositionY + viewport.Height * TopMargin;
+			float marginBottom = cameraPositionY + viewport.Height - viewport.Height * BottomMargin;
 
             //calculate how far to scroll when the player is near the edges of the screen:
-            float cameraMovement = 0.0f;
+            float cameraMovementX = 0.0f;
+
             if (Player.Position.X < marginLeft)
-                cameraMovement = Player.Position.X - marginLeft;
+                cameraMovementX = Player.Position.X - marginLeft;
             else if (Player.Position.X > marginRight)
-                cameraMovement = Player.Position.X - marginRight;
+                cameraMovementX = Player.Position.X - marginRight;
 
             //Update the camera position but prevent scrolling off the ends of the level:
-            float maxCameraPosition = Tile.Width * Width - viewport.Width / 3;
-            cameraPosition = MathHelper.Clamp(cameraPosition + cameraMovement, 0.0f, maxCameraPosition);
+            float maxCameraPositionX = Tile.Width * Width - viewport.Width / 3;
+            cameraPositionX = MathHelper.Clamp(cameraPositionX + cameraMovementX, 0.0f, maxCameraPositionX);
+
+			//calculate how far to scroll when the player is top the edges of the screen:
+			float cameraMovementY = 0.0f;
+
+			if (Player.Position.Y < marginTop)
+				//above margin top
+				cameraMovementY = Player.Position.Y - marginTop;
+			else if (Player.Position.Y > marginBottom)
+				//below marginBottom
+				cameraMovementY = Player.Position.Y - marginBottom;
+
+			float maxCameraPositionY = Tile.Height * Height - viewport.Height;
+			cameraPositionY = MathHelper.Clamp(cameraPositionY + cameraMovementY, 0.0f, maxCameraPositionY); 
       
-            //cameraPosition = Vector2.Lerp(maxCameraPosition, cameraMovement, smoothingFactor * 45);
+            //cameraPositionX = Vector2.Lerp(maxCameraPositionX, cameraMovementX, smoothingFactor * 45);
             //_pos = Vector2.Lerp(_pos, _targetPosition, smoothingFactor * seconds);
         }
 
@@ -619,7 +647,7 @@ namespace Platformer
         private void DrawTiles(SpriteBatch spriteBatch)
         {
             //calulate the visible range of tiles:
-            int left = (int)Math.Floor(cameraPosition / Tile.Width);
+            int left = (int)Math.Floor(cameraPositionX / Tile.Width);
             int right = left + spriteBatch.GraphicsDevice.Viewport.Width / Tile.Width;
             right = Math.Min(right, Width - 1);
 
