@@ -46,6 +46,7 @@ namespace Platformer
         private List<Gem> gems = new List<Gem>();
         public List<Enemy> enemies = new List<Enemy>();
         public List<MovableTile> movableTiles = new List<MovableTile>();
+		public List<WallTile> wallTiles = new List<WallTile>();
 
         // Key locations in the level.        
         private Vector2 start;
@@ -230,6 +231,9 @@ namespace Platformer
                 //Movable Tile:
                 case 'M':
                     return LoadMovableTile(x, y, TileCollision.Platform);
+
+				case 'W':
+				    return LoadWallTile(x, y, TileCollision.Impassable);
                 // Unknown tile type character
                 default:
                     throw new NotSupportedException(String.Format("Unsupported tile type character '{0}' at position {1}, {2}.", tileType, x, y));
@@ -258,6 +262,13 @@ namespace Platformer
             movableTiles.Add(new MovableTile(this, new Vector2(position.X, position.Y), collision));
             return new Tile(null, TileCollision.Passable);
         }
+
+		private Tile LoadWallTile(int x, int y, TileCollision collision)
+		{
+			Point position = GetBounds(x, y).Center;
+			wallTiles.Add(new WallTile(this, new Vector2(position.X, position.Y), collision));
+			return new Tile(null, TileCollision.Impassable);
+		}
 
 
         /// <summary>
@@ -422,6 +433,7 @@ namespace Platformer
 
                 UpdateEnemies(gameTime);
                 UpdateMovableTiles(gameTime);
+				UpdateWallTiles (gameTime);
 
                 // The player has reached the exit if they are standing on the ground and
                 // his bounding rectangle contains the center of the exit tile. They can only
@@ -506,19 +518,36 @@ namespace Platformer
             gem.OnCollected(collectedBy);
         }
 
-        private void UpdateMovableTiles(GameTime gameTime)
-        {
-            foreach (MovableTile tile in movableTiles)
-            {
-                tile.Update(gameTime);
-                if (tile.PlayerIsOn)
-                {
-                    //Make player move with tile if the player is on top of tile
-                    player.Position += tile.Velocity;
+		private void UpdateMovableTiles(GameTime gameTime)
+		{
+			foreach (MovableTile tile in movableTiles)
+			{
+				tile.Update(gameTime);
+				if (tile.PlayerIsOn)
+				{
+					//Make player move with tile if the player is on top of tile
+					player.Position += tile.Velocity;
 					Console.WriteLine (player.Position);
-                }
-            }
-        }
+				}
+			}
+		}
+
+		private void UpdateWallTiles(GameTime gameTime)
+		{
+			foreach (WallTile tile in wallTiles)
+			{
+				tile.Update(gameTime);
+				if (tile.PlayerIsOn)
+				{
+					player.IsOnWall = true;
+
+				}
+				else
+				{
+					player.IsOnWall = false;
+				}
+			}
+		}
 
         /// <summary>
         /// Called when the player is killed.
@@ -580,6 +609,9 @@ namespace Platformer
             
             foreach (MovableTile tile in movableTiles)
                 tile.Draw(gameTime, spriteBatch);
+
+			foreach (WallTile tile in wallTiles)
+				tile.Draw (gameTime, spriteBatch);
 
             foreach (Gem gem in gems)
                 gem.Draw(gameTime, spriteBatch);

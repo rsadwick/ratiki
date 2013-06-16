@@ -125,14 +125,26 @@ namespace Platformer
         }
         bool isOnGround;
 
-        /// <summary>
+
+		public bool IsOnWall
+		{
+			get { return isOnWall; }
+			set { isOnWall = value; }
+		}
+		bool isOnWall;
+        
+		/// <summary>
         /// Current user movement input.
         /// </summary>
         private float movement;
 
         // Jumping state
+
         private bool isJumping;
         private bool wasJumping;
+
+		private bool isWallJumping;
+
         private float jumpTime;
 
         //Ducking
@@ -254,6 +266,7 @@ namespace Platformer
             isJumping = false;
             isDucking = false;
             isLooking = false;
+			isOnWall = false;
         }
 
         /// <summary>
@@ -299,12 +312,18 @@ namespace Platformer
             }
 
             // Check if the player wants to jump.
-            isJumping =
-                gamePadState.IsButtonDown(JumpButton) ||
-                keyboardState.IsKeyDown(Keys.Space) ||
-                keyboardState.IsKeyDown(Keys.W) ||
-                touchState.AnyTouch();
+			isJumping =
+                gamePadState.IsButtonDown (JumpButton) ||
+				keyboardState.IsKeyDown (Keys.Space) ||
+				keyboardState.IsKeyDown (Keys.W) ||
+				touchState.AnyTouch ();
 
+			isWallJumping = 
+				gamePadState.IsButtonDown (JumpButton) && isOnWall ||
+				keyboardState.IsKeyDown (Keys.Space) && keyboardState.IsKeyDown (Keys.Left) && isOnWall ||
+				keyboardState.IsKeyDown (Keys.Space) && keyboardState.IsKeyDown (Keys.Right) && isOnWall;
+
+				
             //check is player wants to duck:
             isDucking =
                 gamePadState.IsButtonDown(DuckButton) ||
@@ -423,12 +442,13 @@ namespace Platformer
         /// </returns>
         private float DoJump(float velocityY, GameTime gameTime)
         {
+
             // If the player wants to jump
             if (isJumping)
             {
                                     
                 // Begin or continue a jump
-                if ((!wasJumping && IsOnGround ) || jumpTime > 0.0f)
+				if ((!wasJumping && IsOnGround ) || jumpTime > 0.0f)
                 {
                     if (jumpTime == 0.0f)
                         jumpSound.Play();
@@ -437,6 +457,7 @@ namespace Platformer
                     sprite.PlayAnimation(jumpAnimation);
 
                 }
+			
 
                 // If we are in the ascent of the jump
                 if (0.0f < jumpTime && jumpTime <= MaxJumpTime)
@@ -446,12 +467,24 @@ namespace Platformer
                     {
                         velocityY = JumpLaunchVelocity * (1.0f - (float)Math.Pow(jumpTime / MaxJumpTime, JumpControlPower * 2));
                     }
+
                     else
                     {
-                        velocityY = JumpLaunchVelocity * (1.0f - (float)Math.Pow(jumpTime / MaxJumpTime, JumpControlPower));
+                         velocityY = JumpLaunchVelocity * (1.0f - (float)Math.Pow(jumpTime / MaxJumpTime, JumpControlPower));
 
                     }
                 }
+
+				else if((!wasJumping && isWallJumping ))
+				{
+					isWallJumping = false;
+					jumpSound.Play();
+					Console.WriteLine (jumpTime);
+					//velocity = -position * 5;
+					velocityY = JumpLaunchVelocity * (1.0f - (float)Math.Pow(jumpTime / MaxJumpTime, JumpControlPower));
+
+				}
+
                 else
                 {
                     // Reached the apex of the jump
@@ -459,6 +492,7 @@ namespace Platformer
 
                 }
             }
+
             else
             {
                 // Continues not jumping or cancels a jump in progress
@@ -466,6 +500,7 @@ namespace Platformer
                 
             }
             wasJumping = isJumping;
+
 
             return velocityY;
         }
@@ -504,6 +539,34 @@ namespace Platformer
 
                 bounds = HandleCollision(bounds, movableTile.Collision, movableTile.BoundingRectangle);
             }
+
+
+			//Wall Jumping:
+			//movable tiles:
+			foreach(var wallTile in level.wallTiles)
+			{
+				//reset flag to search for movableTile collisions:
+				wallTile.PlayerIsOn = false;
+				//Console.WriteLine ( wallTile.BoundingRectangle.Left - (BoundingRectangle.Width /2));
+				//check to see if player is on tile:
+				int test = wallTile.BoundingRectangle.Right - BoundingRectangle.Height/2;
+				//Console.WriteLine ("Player Left " + BoundingRectangle.Left + "- " + test + " - " + wallTile.BoundingRectangle.Right);
+				if((BoundingRectangle.Right == wallTile.BoundingRectangle.Left || BoundingRectangle.Left == wallTile.BoundingRectangle.Right ))
+				{
+					wallTile.PlayerIsOn = true;
+
+				}
+				else
+				{
+					wallTile.PlayerIsOn = false;
+				}
+
+
+				bounds = HandleCollision(bounds, wallTile.Collision, wallTile.BoundingRectangle);
+			}
+
+
+
 
             //movable enemies:
             foreach (var movableEnemy in level.enemies)

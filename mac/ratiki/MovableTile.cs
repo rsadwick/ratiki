@@ -124,6 +124,7 @@ namespace Platformer
         }
         public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
         {
+
             spriteBatch.Draw(
                 texture,
                 Position,
