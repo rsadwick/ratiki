@@ -519,7 +519,7 @@ namespace Platformer
             int rightTile = (int)Math.Ceiling(((float)bounds.Right / Tile.Width)) - 1;
             int topTile = (int)Math.Floor((float)bounds.Top / Tile.Height);
             int bottomTile = (int)Math.Ceiling(((float)bounds.Bottom / Tile.Height)) - 1;
-
+            
             // Reset flag to search for ground collision.
             isOnGround = false;
 
@@ -547,27 +547,14 @@ namespace Platformer
 			{
 				//reset flag to search for movableTile collisions:
 				wallTile.PlayerIsOn = false;
-				//Console.WriteLine ( wallTile.BoundingRectangle.Left - (BoundingRectangle.Width /2));
-				//check to see if player is on tile:
-				//int test = wallTile.BoundingRectangle.Right - BoundingRectangle.Height/2;
-				//Console.WriteLine ("Player Left " + BoundingRectangle.Left + "- " + test + " - " + wallTile.BoundingRectangle.Right);
-				if((BoundingRectangle.Right == wallTile.BoundingRectangle.Left || BoundingRectangle.Left == wallTile.BoundingRectangle.Right ))
+                if(BoundingRectangle.Right == wallTile.BoundingRectangle.Left || BoundingRectangle.Left == wallTile.BoundingRectangle.Right)
 				{
 					wallTile.PlayerIsOn = true;
 
 				}
 
-				else
-				{
-					wallTile.PlayerIsOn = false;
-				}
-
-
 				bounds = HandleCollision(bounds, wallTile.Collision, wallTile.BoundingRectangle);
 			}
-
-
-
 
             //movable enemies:
             foreach (var movableEnemy in level.enemies)

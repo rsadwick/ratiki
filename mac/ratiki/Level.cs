@@ -534,17 +534,13 @@ namespace Platformer
 
 		private void UpdateWallTiles(GameTime gameTime)
 		{
+            player.IsOnWall = false;
 			foreach (WallTile tile in wallTiles)
 			{
 				tile.Update(gameTime);
 				if (tile.PlayerIsOn)
 				{
 					player.IsOnWall = true;
-
-				}
-				else
-				{
-					player.IsOnWall = false;
 				}
 			}
 		}
