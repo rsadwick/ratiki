@@ -63,8 +63,6 @@ namespace Platformer
 		}
 		public void LoadContent()
 		{
-
-
 			texture = collision == TileCollision.Platform ?
 				Level.Content.Load<Texture2D>("Tiles/BlockA5") :
 					Level.Content.Load<Texture2D>("Tiles/BlockA5");
@@ -74,13 +72,6 @@ namespace Platformer
 		}
 		public void Update(GameTime gameTime)
 		{
-			float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
-			// Calculate tile position based on the side we are moving towards.
-			float posX = Position.X + localBounds.Width / 2 * (int)direction;
-			int tileX = (int)Math.Floor(posX / Tile.Width) - (int)direction;
-			int tileY = (int)Math.Floor(Position.Y / Tile.Height);
-
-
 
 		}
 		public void Draw(GameTime gameTime, SpriteBatch spriteBatch)

@@ -549,13 +549,14 @@ namespace Platformer
 				wallTile.PlayerIsOn = false;
 				//Console.WriteLine ( wallTile.BoundingRectangle.Left - (BoundingRectangle.Width /2));
 				//check to see if player is on tile:
-				int test = wallTile.BoundingRectangle.Right - BoundingRectangle.Height/2;
+				//int test = wallTile.BoundingRectangle.Right - BoundingRectangle.Height/2;
 				//Console.WriteLine ("Player Left " + BoundingRectangle.Left + "- " + test + " - " + wallTile.BoundingRectangle.Right);
 				if((BoundingRectangle.Right == wallTile.BoundingRectangle.Left || BoundingRectangle.Left == wallTile.BoundingRectangle.Right ))
 				{
 					wallTile.PlayerIsOn = true;
 
 				}
+
 				else
 				{
 					wallTile.PlayerIsOn = false;
