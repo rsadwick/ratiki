@@ -495,6 +495,7 @@ namespace Platformer
                     }
                     else
                     {
+                        player.Lives -= 1;
                        // OnPlayerKilled(enemy);
                     }
                 }

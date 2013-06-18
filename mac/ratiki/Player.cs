@@ -50,6 +50,15 @@ namespace Platformer
             get { return isAlive; }
         }
         bool isAlive;
+
+        //player lives
+        public int Lives
+        {
+            get { return lives; }
+            set { lives = value; } 
+        }
+
+        int lives = 3;
     
         //Powerup state:
         private const float MaxPowerUpTime = 9.0f;
@@ -568,6 +577,11 @@ namespace Platformer
                     BoundingRectangle.Right <= movableEnemy.BoundingRectangle.Right + (BoundingRectangle.Width / 2)))
                 {
                     movableEnemy.PlayerIsOn = true;
+                }
+                else if(BoundingRectangle.Right == movableEnemy.BoundingRectangle.Left)
+                {
+                    position.X = movableEnemy.Position.X - movableEnemy.BoundingRectangle.Width * 2;
+                 //   Position = new Vector2(movableEnemy.Velocity);
                 }
 
                 bounds = HandleCollision(bounds, movableEnemy.Collision, movableEnemy.BoundingRectangle);
