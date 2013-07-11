@@ -50,13 +50,30 @@ namespace Platformer
             get { return isAlive; }
         }
         bool isAlive;
+
+        //player lives
+        public int Lives
+        {
+            get { return lives; }
+            set { lives = value; } 
+        }
+
+        int lives = 3;
     
-        //Powerup state:
+        //Powerup states:
         private const float MaxPowerUpTime = 9.0f;
         private float powerUpTime;
         public bool IsPoweredUp
         {
             get { return powerUpTime > 0.0f; }
+        }
+
+        //invulerable state:
+        private const float MaxVulerableTime = 1.0f;
+        private float invulerableTime;
+        public bool IsInvulerable
+        {
+            get { return invulerableTime > 0.0f; }
         }
 
         protected bool IsCharged;
@@ -75,6 +92,12 @@ namespace Platformer
                                                        Color.WhiteSmoke,
                                                        Color.Navy,
                                                        Color.Gold,
+                                                   };
+        
+        private readonly Color[] invulerableColors = {
+                                                       Color.Gray,
+                                                       Color.Black,
+                                                       Color.White,
                                                    };
         
         private SoundEffect powerUpSound;
@@ -103,7 +126,7 @@ namespace Platformer
         private const float AirDragFactor = 0.58f;
 
         // Constants for controlling vertical movement
-        private float MaxJumpTime = 0.80f;
+        private float MaxJumpTime = 0.40f;
         private const float JumpLaunchVelocity = -2600.0f;
         private const float GravityAcceleration = 2600.0f;
         private const float MaxFallSpeed = 450.0f;
@@ -125,14 +148,26 @@ namespace Platformer
         }
         bool isOnGround;
 
-        /// <summary>
+
+		public bool IsOnWall
+		{
+			get { return isOnWall; }
+			set { isOnWall = value; }
+		}
+		bool isOnWall;
+        
+		/// <summary>
         /// Current user movement input.
         /// </summary>
         private float movement;
 
         // Jumping state
+
         private bool isJumping;
         private bool wasJumping;
+
+		private bool isWallJumping;
+
         private float jumpTime;
 
         //Ducking
@@ -254,6 +289,7 @@ namespace Platformer
             isJumping = false;
             isDucking = false;
             isLooking = false;
+			isOnWall = false;
         }
 
         /// <summary>
@@ -299,12 +335,18 @@ namespace Platformer
             }
 
             // Check if the player wants to jump.
-            isJumping =
-                gamePadState.IsButtonDown(JumpButton) ||
-                keyboardState.IsKeyDown(Keys.Space) ||
-                keyboardState.IsKeyDown(Keys.W) ||
-                touchState.AnyTouch();
+			isJumping =
+                gamePadState.IsButtonDown (JumpButton) ||
+				keyboardState.IsKeyDown (Keys.Space) ||
+				keyboardState.IsKeyDown (Keys.W) ||
+				touchState.AnyTouch ();
 
+			isWallJumping = 
+				gamePadState.IsButtonDown (JumpButton) && isOnWall ||
+				keyboardState.IsKeyDown (Keys.Space) && keyboardState.IsKeyDown (Keys.Left) && isOnWall ||
+				keyboardState.IsKeyDown (Keys.Space) && keyboardState.IsKeyDown (Keys.Right) && isOnWall;
+
+				
             //check is player wants to duck:
             isDucking =
                 gamePadState.IsButtonDown(DuckButton) ||
@@ -329,8 +371,6 @@ namespace Platformer
 
             Vector2 previousPosition = Position;
 
-            bool isHeld;
-
             // Base velocity is a combination of horizontal movement control and
             // acceleration downward due to gravity.
             if (IsCharged)
@@ -338,6 +378,10 @@ namespace Platformer
                 velocity.X += movement * MoveAcceleration * elapsed * 2;
 
             }
+			else if(IsPoweredUp)
+			{
+				velocity.X += movement * MoveAcceleration * elapsed * 2;
+			}
             else
             {
                 velocity.X += movement * MoveAcceleration * elapsed;
@@ -392,11 +436,9 @@ namespace Platformer
                 }
             }
 
-
             else
             {
                 IsCharged = false;
-                MaxJumpTime = 0.50f;
                 holdTimer = 0.0f;
                 MaxJumpTime = 0.40f;
                 JumpControlPower = 0.09f;
@@ -423,12 +465,13 @@ namespace Platformer
         /// </returns>
         private float DoJump(float velocityY, GameTime gameTime)
         {
+
             // If the player wants to jump
             if (isJumping)
             {
                                     
                 // Begin or continue a jump
-                if ((!wasJumping && IsOnGround ) || jumpTime > 0.0f)
+				if ((!wasJumping && IsOnGround ) || jumpTime > 0.0f)
                 {
                     if (jumpTime == 0.0f)
                         jumpSound.Play();
@@ -437,6 +480,7 @@ namespace Platformer
                     sprite.PlayAnimation(jumpAnimation);
 
                 }
+			
 
                 // If we are in the ascent of the jump
                 if (0.0f < jumpTime && jumpTime <= MaxJumpTime)
@@ -446,12 +490,24 @@ namespace Platformer
                     {
                         velocityY = JumpLaunchVelocity * (1.0f - (float)Math.Pow(jumpTime / MaxJumpTime, JumpControlPower * 2));
                     }
+
                     else
                     {
-                        velocityY = JumpLaunchVelocity * (1.0f - (float)Math.Pow(jumpTime / MaxJumpTime, JumpControlPower));
+                         velocityY = JumpLaunchVelocity * (1.0f - (float)Math.Pow(jumpTime / MaxJumpTime, JumpControlPower));
 
                     }
                 }
+
+				else if((!wasJumping && isWallJumping ))
+				{
+					isWallJumping = false;
+					jumpSound.Play();
+					Console.WriteLine (jumpTime);
+					//velocity = -position * 5;
+					velocityY = JumpLaunchVelocity * (1.0f - (float)Math.Pow(jumpTime / MaxJumpTime, JumpControlPower));
+
+				}
+
                 else
                 {
                     // Reached the apex of the jump
@@ -459,6 +515,7 @@ namespace Platformer
 
                 }
             }
+
             else
             {
                 // Continues not jumping or cancels a jump in progress
@@ -466,6 +523,7 @@ namespace Platformer
                 
             }
             wasJumping = isJumping;
+
 
             return velocityY;
         }
@@ -484,7 +542,7 @@ namespace Platformer
             int rightTile = (int)Math.Ceiling(((float)bounds.Right / Tile.Width)) - 1;
             int topTile = (int)Math.Floor((float)bounds.Top / Tile.Height);
             int bottomTile = (int)Math.Ceiling(((float)bounds.Bottom / Tile.Height)) - 1;
-
+            
             // Reset flag to search for ground collision.
             isOnGround = false;
 
@@ -505,18 +563,53 @@ namespace Platformer
                 bounds = HandleCollision(bounds, movableTile.Collision, movableTile.BoundingRectangle);
             }
 
+
+			//Wall Jumping:
+			//movable tiles:
+			foreach(var wallTile in level.wallTiles)
+			{
+				//reset flag to search for movableTile collisions:
+				wallTile.PlayerIsOn = false;
+                if(BoundingRectangle.Right == wallTile.BoundingRectangle.Left || BoundingRectangle.Left == wallTile.BoundingRectangle.Right)
+				{
+					wallTile.PlayerIsOn = true;
+
+				}
+
+				bounds = HandleCollision(bounds, wallTile.Collision, wallTile.BoundingRectangle);
+			}
+
             //movable enemies:
             foreach (var movableEnemy in level.enemies)
             {
                 //reset flag to search for movableTile collisions:
                 movableEnemy.PlayerIsOn = false;
 
-                //check to see if player is on tile:
+                //check to see if player is on enemy:
                 if ((BoundingRectangle.Bottom == movableEnemy.BoundingRectangle.Top + 1) &&
                     (BoundingRectangle.Left >= movableEnemy.BoundingRectangle.Left - (BoundingRectangle.Width / 2) &&
                     BoundingRectangle.Right <= movableEnemy.BoundingRectangle.Right + (BoundingRectangle.Width / 2)))
                 {
                     movableEnemy.PlayerIsOn = true;
+                }
+                else if(BoundingRectangle.Right == movableEnemy.BoundingRectangle.Left)
+                {
+                    //position.X = movableEnemy.Position.X - movableEnemy.BoundingRectangle.Width * 2;
+
+
+                  // velocity.X *= -1 / 2;
+                  // position.X += velocity.X;
+                    
+                    /* velocity.X *= -1;
+                     velocity.Y *= 0;
+                     position += velocity;*/
+                    
+                    Vector2 depth = RectangleExtensions.GetIntersectionDepth(bounds, movableEnemy.BoundingRectangle);
+                    Position = new Vector2( movableEnemy.Position.X - movableEnemy.BoundingRectangle.Width * 2 + depth.X, Position.Y);
+                    //IsInvulerable = true;
+
+
+                 //   Position = new Vector2(movableEnemy.Velocity);
                 }
 
                 bounds = HandleCollision(bounds, movableEnemy.Collision, movableEnemy.BoundingRectangle);
@@ -661,6 +754,12 @@ private Rectangle HandleCollision(Rectangle bounds, TileCollision collision, Rec
                 float t = ((float)gameTime.TotalGameTime.TotalSeconds + holdTimer / HOLD_TIMESPAN) * 20.0f;
                 int colorIndex = (int)t % chargedUpColors.Length;
                 color = chargedUpColors[colorIndex];
+            }
+            else if (IsInvulerable)
+            {
+                float t = ((float)gameTime.TotalGameTime.TotalSeconds + powerUpTime / MaxVulerableTime) * 20.0f;
+                int colorIndex = (int)t % invulerableColors.Length;
+                color = invulerableColors[colorIndex];
             }
             else
             {
