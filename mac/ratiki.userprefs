@@ -1,13 +1,10 @@
 ﻿<Properties MonoDevelop.MonoMac.LastXamMacNagTime="6/23/2013 1:03:29 AM">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="../../../Projects/crap/crap/Content/Levels/0.txt">
+  <MonoDevelop.Ide.Workbench ActiveDocument="../../../Projects/crap/crap/Player.cs">
     <Files>
-      <File FileName="../../../Projects/crap/crap/Player.cs" Line="326" Column="5" />
-      <File FileName="../../../Projects/crap/crap/Level.cs" Line="1" Column="1" />
-      <File FileName="../../../Projects/crap/crap/WallTile.cs" Line="55" Column="39" />
-      <File FileName="../../../Projects/crap/crap/Program.cs" Line="24" Column="1" />
-      <File FileName="../../../Projects/crap/crap/Gem.cs" Line="48" Column="14" />
-      <File FileName="../../../Projects/crap/crap/Content/Levels/0.txt" Line="8" Column="48" />
+      <File FileName="../../../Projects/crap/crap/Player.cs" Line="576" Column="18" />
+      <File FileName="../../../Projects/crap/crap/Level.cs" Line="442" Column="38" />
+      <File FileName="../../../Projects/crap/crap/Content/Levels/0.txt" Line="12" Column="29" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
