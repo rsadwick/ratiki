@@ -16,6 +16,10 @@ using Microsoft.Xna.Framework.Audio;
 using System.IO;
 using Microsoft.Xna.Framework.Input.Touch;
 using Microsoft.Xna.Framework.Input;
+using FarseerPhysics.Dynamics;
+using FarseerPhysics.Factories;
+
+
 
 namespace Platformer
 {
@@ -36,6 +40,8 @@ namespace Platformer
         // The layer which entities are drawn on top of.
         private const int EntityLayer = 2;
 
+		private Crazy playerField;
+
         // Entities in the level.
         public Player Player
         {
@@ -44,7 +50,11 @@ namespace Platformer
         Player player;
 
         private List<Gem> gems = new List<Gem>();
-        public List<Enemy> enemies = new List<Enemy>();
+		private List <Crazy> crates = new List<Crazy>();
+		private List <Crazy> floors = new List<Crazy>();
+		private World world;
+
+		public List<Enemy> enemies = new List<Enemy>();
         public List<MovableTile> movableTiles = new List<MovableTile>();
 		public List<WallTile> wallTiles = new List<WallTile>();
 
@@ -85,6 +95,13 @@ namespace Platformer
 
         private SoundEffect exitReachedSound;
 
+		//farseer
+
+		private Texture2D sprite;
+
+
+
+
         #region Loading
 
         /// <summary>
@@ -98,6 +115,9 @@ namespace Platformer
         /// </param>
         public Level(IServiceProvider serviceProvider, Stream fileStream, int levelIndex)
         {
+			world = new World(new Vector2(0, 9.8f));  
+			random = new Random();
+
             // Create a new content manager to load content used just by this level.
             content = new ContentManager(serviceProvider, "Content");
 
@@ -114,7 +134,24 @@ namespace Platformer
 
             // Load sounds.
             exitReachedSound = Content.Load<SoundEffect>("Sounds/StageCleared");
+
+
+
+
+
+
+			//sprite = Content.Load<Texture2D>("Sprites/sphere.png");
         }
+
+		private void SpawnCrate()
+		{
+			//Console.WriteLine (Content.Load<Texture2D> ("Sprites/sphere.png").ToString());
+			Crazy crate;
+			crate = new Crazy(world, "Sprites/sphere.png", new Vector2(50.0f, 50.0f), 0.1f, this, new Vector2(random.Next(10, 10), 1), true);
+			crate.Position = new Vector2(random.Next(10, 10), 1);
+
+			crates.Add(crate);
+		}
 
         /// <summary>
         /// Iterates over every tile in the structure file and loads its
@@ -233,7 +270,16 @@ namespace Platformer
                     return LoadMovableTile(x, y, TileCollision.Platform);
 
 				case 'W':
-				    return LoadWallTile(x, y, TileCollision.Impassable);
+					return LoadWallTile(x, y, TileCollision.Impassable);
+
+				//Floor
+				case 'F':
+					return LoadFloorTile (x, y, TileCollision.Impassable);
+
+				//crates
+				case 'f':
+					return LoadCrateTile (x, y, TileCollision.Platform);
+
                 // Unknown tile type character
                 default:
                     throw new NotSupportedException(String.Format("Unsupported tile type character '{0}' at position {1}, {2}.", tileType, x, y));
@@ -270,6 +316,29 @@ namespace Platformer
 			return new Tile(null, TileCollision.Impassable);
 		}
 
+		private Tile LoadFloorTile(int x, int y, TileCollision collision)
+		{
+
+			Point position = GetBounds(x, y).Center;
+			Crazy floor = new Crazy(world, "Tiles/grass.png", new Vector2(32.0f, 32.0f), 1, this, new Vector2(position.X, position.Y), false);
+			floor.Position = new Vector2 (position.X, position.Y);
+			floor.body.BodyType = BodyType.Static;
+			floors.Add(floor);
+
+			return new Tile(null, TileCollision.Impassable);
+		}
+
+		private Tile LoadCrateTile(int x, int y, TileCollision collision)
+		{
+
+			Point position = GetBounds (x, y).Center;
+			random = new Random();
+			Crazy crate = new Crazy(world, "Sprites/sphere.png", new Vector2(32.0f, 32.0f), 0.1f, this, new Vector2 (random.Next (10, 10), 1), true);
+			crate.Position = new Vector2 (position.X, position.Y);
+			crates.Add (crate);
+			return new Tile(null, TileCollision.Platform);
+		}
+
 
         /// <summary>
         /// Loads a tile with a random appearance.
@@ -298,6 +367,16 @@ namespace Platformer
 
             start = RectangleExtensions.GetBottomCenter(GetBounds(x, y));
             player = new Player(this, start);
+
+			playerField = new Crazy (world, "Sprites/sphere.png", new Vector2 (player.BoundingRectangle.Width, 
+			                                                                   player.BoundingRectangle.Height), 0.1f,
+			                        this,
+			                        new Vector2 (player.BoundingRectangle.X, player.BoundingRectangle.Y),
+			                        false);
+
+			//playerField.body.BodyType = BodyType.Static;
+			                        
+
 
             return new Tile(null, TileCollision.Passable);
         }
@@ -407,7 +486,8 @@ namespace Platformer
             AccelerometerState accelState,
             DisplayOrientation orientation)
         {
-            // Pause while the player is dead or time is expired.
+
+			// Pause while the player is dead or time is expired.
             if (!Player.IsAlive || TimeRemaining == TimeSpan.Zero)
             {
                 // Still want to perform physics on the player.
@@ -425,7 +505,11 @@ namespace Platformer
             {
                 timeRemaining -= gameTime.ElapsedGameTime;
                 Player.Update(gameTime, keyboardState, gamePadState, touchState, accelState, orientation);
-                UpdateGems(gameTime);
+                
+
+
+				UpdateGems(gameTime);
+
 
                 // Falling off the bottom of the level kills the player.
                 if (Player.BoundingRectangle.Top >= Height * Tile.Height)
@@ -434,6 +518,10 @@ namespace Platformer
                 UpdateEnemies(gameTime);
                 UpdateMovableTiles(gameTime);
 				UpdateWallTiles (gameTime);
+
+				//UpdatePlayerField (gameTime);
+
+
 
                 // The player has reached the exit if they are standing on the ground and
                 // his bounding rectangle contains the center of the exit tile. They can only
@@ -449,6 +537,10 @@ namespace Platformer
             // Clamp the time remaining at zero.
             if (timeRemaining < TimeSpan.Zero)
                 timeRemaining = TimeSpan.Zero;
+
+			world.Step((float)gameTime.ElapsedGameTime.TotalSeconds);
+
+
         }
 
         /// <summary>
@@ -470,6 +562,12 @@ namespace Platformer
             }
         }
 
+		private void UpdatePlayerField(GameTime gameTime)
+		{
+			//playerField.Update(new Vector2(player.BoundingRectangle.X, player.BoundingRectangle.Y));
+
+		}
+
         /// <summary>
         /// Animates each enemy and allow them to kill the player.
         /// </summary>
@@ -483,7 +581,8 @@ namespace Platformer
                 {
                     //Make player move with tile if the player is on top of tile
                     player.Position += enemy.Velocity;
-					Console.WriteLine (player.Position);
+
+					SpawnCrate ();
                 } 
 
                 // Enemy collisions: if enemy collides with player - power up or not:
@@ -493,11 +592,16 @@ namespace Platformer
                     {
                         OnEnemyKilled(enemy, Player);
                     }
-                    else
+                    
+                    else if(Player.IsInvulnerable)
                     {
-                        player.Lives -= 1;
-                       // OnPlayerKilled(enemy);
+                        
                     }
+					else
+					{
+						player.Lives -= 1;
+						Player.IsInvulnerable = true;
+					}
                 }
             }
         }
@@ -518,6 +622,8 @@ namespace Platformer
 
             gem.OnCollected(collectedBy);
         }
+
+
 
 		private void UpdateMovableTiles(GameTime gameTime)
 		{
@@ -545,6 +651,7 @@ namespace Platformer
 				}
 			}
 		}
+
 
         /// <summary>
         /// Called when the player is killed.
@@ -613,7 +720,22 @@ namespace Platformer
             foreach (Gem gem in gems)
                 gem.Draw(gameTime, spriteBatch);
 
+			foreach (Crazy floor in floors)
+			{
+				floor.Draw(spriteBatch);
+			}
+
+			foreach (Crazy crate in crates)
+			{
+				crate.Draw(spriteBatch);
+			}
+
+
+			playerField.Draw (spriteBatch);
+
+
             Player.Draw(gameTime, spriteBatch);
+
 
             foreach (Enemy enemy in enemies)
                 enemy.Draw(gameTime, spriteBatch);
@@ -624,6 +746,10 @@ namespace Platformer
             for (int i = EntityLayer + 1; i < layers.Length; ++i)
                 layers[i].Draw(spriteBatch, cameraPositionX, cameraPositionY, bottom);
             spriteBatch.End();
+
+
+
+
         }
 
         private void ScrollCamera(Viewport viewport)

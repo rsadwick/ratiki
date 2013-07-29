@@ -33,6 +33,7 @@ namespace Platformer
         private AnimationPlayer sprite;
         private const float HOLD_TIMESPAN = 0.50f;
         private const float CHARGE_JUMP_TIMESPAN = 1.90f;
+		private const float DAMAGE_INVULNERABLE_TIMESPAN = 1.0f;
         private float holdTimer;
         // Sounds
         private SoundEffect killedSound;
@@ -59,14 +60,18 @@ namespace Platformer
         }
 
         int lives = 3;
-    
-        //Powerup state:
+		  
+        //Powerup states:
         private const float MaxPowerUpTime = 9.0f;
         private float powerUpTime;
         public bool IsPoweredUp
         {
             get { return powerUpTime > 0.0f; }
         }
+
+        //invulerable state:
+		public bool IsInvulnerable;
+		protected float invulnerableTimer = 0.0f;
 
         protected bool IsCharged;
         protected bool IsPowerJump;
@@ -84,6 +89,12 @@ namespace Platformer
                                                        Color.WhiteSmoke,
                                                        Color.Navy,
                                                        Color.Gold,
+                                                   };
+        
+        private readonly Color[] invulerableColors = {
+                                                       Color.Gray,
+                                                       Color.Black,
+                                                       Color.White,
                                                    };
         
         private SoundEffect powerUpSound;
@@ -215,6 +226,7 @@ namespace Platformer
             jumpSound = Level.Content.Load<SoundEffect>("Sounds/jumper");
             fallSound = Level.Content.Load<SoundEffect>("Sounds/PlayerDeath");
             powerUpSound = Level.Content.Load<SoundEffect>("Sounds/Secret");
+
         }
 
         /// <summary>
@@ -391,7 +403,7 @@ namespace Platformer
             Position = new Vector2((float)Math.Round(Position.X), (float)Math.Round(Position.Y));
 
             // If the player is now colliding with the level, separate them.
-            HandleCollisions();
+            HandleCollisions(gameTime);
 
             // If the collision stopped us from moving, reset the velocity to zero.
             if (Position.X == previousPosition.X)
@@ -406,6 +418,16 @@ namespace Platformer
                 powerUpTime = Math.Max(0.0f, powerUpTime - (float)gameTime.ElapsedGameTime.TotalSeconds);
                 MaxJumpTime = 0.99f;
             }
+			else if(IsInvulnerable)
+			{
+
+				invulnerableTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
+				if(invulnerableTimer > DAMAGE_INVULNERABLE_TIMESPAN)
+				{
+					IsInvulnerable = false;
+				}
+
+			}
             else if (isDucking)
             {
                 //Jump Booster:
@@ -424,10 +446,12 @@ namespace Platformer
 
             else
             {
+				//reset all:
                 IsCharged = false;
                 holdTimer = 0.0f;
                 MaxJumpTime = 0.40f;
                 JumpControlPower = 0.09f;
+				invulnerableTimer = 0.0f;
 
             }
         }
@@ -520,7 +544,7 @@ namespace Platformer
         /// axis to prevent overlapping. There is some special logic for the Y axis to
         /// handle platforms which behave differently depending on direction of movement.
         /// </summary>
-        private void HandleCollisions()
+        private void HandleCollisions(GameTime gameTime)
         { 
             // Get the player's bounding rectangle and find neighboring tiles.
             Rectangle bounds = BoundingRectangle;
@@ -571,7 +595,7 @@ namespace Platformer
                 //reset flag to search for movableTile collisions:
                 movableEnemy.PlayerIsOn = false;
 
-                //check to see if player is on tile:
+                //check to see if player is on enemy:
                 if ((BoundingRectangle.Bottom == movableEnemy.BoundingRectangle.Top + 1) &&
                     (BoundingRectangle.Left >= movableEnemy.BoundingRectangle.Left - (BoundingRectangle.Width / 2) &&
                     BoundingRectangle.Right <= movableEnemy.BoundingRectangle.Right + (BoundingRectangle.Width / 2)))
@@ -580,7 +604,24 @@ namespace Platformer
                 }
                 else if(BoundingRectangle.Right == movableEnemy.BoundingRectangle.Left)
                 {
-                    position.X = movableEnemy.Position.X - movableEnemy.BoundingRectangle.Width * 2;
+                    //position.X = movableEnemy.Position.X - movableEnemy.BoundingRectangle.Width * 2;
+
+
+                  // velocity.X *= -1 / 2;
+                  // position.X += velocity.X;
+                    
+                    /* velocity.X *= -1;
+                     velocity.Y *= 0;
+                     position += velocity;*/
+                    
+                   // Vector2 depth = RectangleExtensions.GetIntersectionDepth(bounds, movableEnemy.BoundingRectangle);
+                   // Position = new Vector2( movableEnemy.Position.X - movableEnemy.BoundingRectangle.Width * 2 + depth.X, Position.Y);
+
+					//IsInvulnerable = true;
+				
+                    //IsInvulerable = true;
+
+
                  //   Position = new Vector2(movableEnemy.Velocity);
                 }
 
@@ -726,6 +767,12 @@ private Rectangle HandleCollision(Rectangle bounds, TileCollision collision, Rec
                 float t = ((float)gameTime.TotalGameTime.TotalSeconds + holdTimer / HOLD_TIMESPAN) * 20.0f;
                 int colorIndex = (int)t % chargedUpColors.Length;
                 color = chargedUpColors[colorIndex];
+            }
+			else if (IsInvulnerable)
+            {
+                float t = ((float)gameTime.TotalGameTime.TotalSeconds + powerUpTime / DAMAGE_INVULNERABLE_TIMESPAN) * 20.0f;
+                int colorIndex = (int)t % invulerableColors.Length;
+				color = new Color (invulerableColors[colorIndex], 0);
             }
             else
             {
