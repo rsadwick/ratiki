@@ -13,14 +13,13 @@ using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Input.Touch;
+using FarseerPhysics.Dynamics;
 
-namespace Platformer
-{
+namespace Platformer {
     /// <summary>
     /// Our fearless adventurer!
     /// </summary>
-    class Player
-    {
+    class Player {
         // Animations
         private Animation idleAnimation;
         private Animation runAnimation;
@@ -33,48 +32,42 @@ namespace Platformer
         private AnimationPlayer sprite;
         private const float HOLD_TIMESPAN = 0.50f;
         private const float CHARGE_JUMP_TIMESPAN = 1.90f;
+        private const float DAMAGE_INVULNERABLE_TIMESPAN = 1.0f;
         private float holdTimer;
         // Sounds
         private SoundEffect killedSound;
         private SoundEffect jumpSound;
         private SoundEffect fallSound;
+        private Crazy floor;
 
-        public Level Level
-        {
+        public Level Level {
             get { return level; }
         }
         Level level;
 
-        public bool IsAlive
-        {
+        public bool IsAlive {
             get { return isAlive; }
         }
         bool isAlive;
 
         //player lives
-        public int Lives
-        {
+        public int Lives {
             get { return lives; }
-            set { lives = value; } 
+            set { lives = value; }
         }
 
         int lives = 3;
-    
+
         //Powerup states:
         private const float MaxPowerUpTime = 9.0f;
         private float powerUpTime;
-        public bool IsPoweredUp
-        {
+        public bool IsPoweredUp {
             get { return powerUpTime > 0.0f; }
         }
 
         //invulerable state:
-        private const float MaxVulerableTime = 1.0f;
-        private float invulerableTime;
-        public bool IsInvulerable
-        {
-            get { return invulerableTime > 0.0f; }
-        }
+        public bool IsInvulnerable;
+        protected float invulnerableTimer = 0.0f;
 
         protected bool IsCharged;
         protected bool IsPowerJump;
@@ -93,18 +86,17 @@ namespace Platformer
                                                        Color.Navy,
                                                        Color.Gold,
                                                    };
-        
+
         private readonly Color[] invulerableColors = {
                                                        Color.Gray,
                                                        Color.Black,
                                                        Color.White,
                                                    };
-        
+
         private SoundEffect powerUpSound;
 
         // Physics state
-        public Vector2 Position
-        {
+        public Vector2 Position {
             get { return position; }
             set { position = value; }
         }
@@ -112,8 +104,7 @@ namespace Platformer
 
         private float previousBottom;
 
-        public Vector2 Velocity
-        {
+        public Vector2 Velocity {
             get { return velocity; }
             set { velocity = value; }
         }
@@ -130,7 +121,7 @@ namespace Platformer
         private const float JumpLaunchVelocity = -2600.0f;
         private const float GravityAcceleration = 2600.0f;
         private const float MaxFallSpeed = 450.0f;
-        private float JumpControlPower = 0.09f; 
+        private float JumpControlPower = 0.09f;
 
         // Input configuration
         private const float MoveStickScale = 1.0f;
@@ -142,21 +133,19 @@ namespace Platformer
         /// <summary>
         /// Gets whether or not the player's feet are on the ground.
         /// </summary>
-        public bool IsOnGround
-        {
+        public bool IsOnGround {
             get { return isOnGround; }
         }
         bool isOnGround;
 
 
-		public bool IsOnWall
-		{
-			get { return isOnWall; }
-			set { isOnWall = value; }
-		}
-		bool isOnWall;
-        
-		/// <summary>
+        public bool IsOnWall {
+            get { return isOnWall; }
+            set { isOnWall = value; }
+        }
+        bool isOnWall;
+
+        /// <summary>
         /// Current user movement input.
         /// </summary>
         private float movement;
@@ -166,7 +155,7 @@ namespace Platformer
         private bool isJumping;
         private bool wasJumping;
 
-		private bool isWallJumping;
+        private bool isWallJumping;
 
         private float jumpTime;
 
@@ -177,15 +166,15 @@ namespace Platformer
         private bool isLooking;
 
         private Rectangle localBounds;
+
+
         /// <summary>
         /// Gets a rectangle which bounds this player in world space.
         /// </summary>
-        public Rectangle BoundingRectangle
-        {
-            get
-            {
-                int left = (int)Math.Round(Position.X - sprite.Origin.X) + localBounds.X;
-                int top = (int)Math.Round(Position.Y - sprite.Origin.Y) + localBounds.Y;
+        public Rectangle BoundingRectangle {
+            get {
+                int left = (int) Math.Round(Position.X - sprite.Origin.X) + localBounds.X;
+                int top = (int) Math.Round(Position.Y - sprite.Origin.Y) + localBounds.Y;
 
                 return new Rectangle(left, top, localBounds.Width, localBounds.Height);
             }
@@ -194,8 +183,7 @@ namespace Platformer
         /// <summary>
         /// Constructors a new player.
         /// </summary>
-        public Player(Level level, Vector2 position)
-        {
+        public Player(Level level, Vector2 position) {
             this.level = level;
 
             LoadContent();
@@ -206,8 +194,7 @@ namespace Platformer
         /// <summary>
         /// Loads the player sprite sheet and sounds.
         /// </summary>
-        public void LoadContent()
-        {
+        public void LoadContent() {
             // Load animated textures.
             idleAnimation = new Animation(Level.Content.Load<Texture2D>("Sprites/Player/Idle2"), 0.1f, true);
             runAnimation = new Animation(Level.Content.Load<Texture2D>("Sprites/Player/Run2"), 0.1f, true);
@@ -218,9 +205,9 @@ namespace Platformer
             dieAnimation = new Animation(Level.Content.Load<Texture2D>("Sprites/Player/Die"), 0.1f, false);
 
             // Calculate bounds within texture size.            
-            int width = (int)(idleAnimation.FrameWidth * 0.4);
+            int width = (int) (idleAnimation.FrameWidth * 0.4);
             int left = (idleAnimation.FrameWidth - width) / 2;
-            int height = (int)(idleAnimation.FrameWidth * 0.8);
+            int height = (int) (idleAnimation.FrameWidth * 0.8);
             int top = idleAnimation.FrameHeight - height;
             localBounds = new Rectangle(left, top, width, height);
 
@@ -229,14 +216,17 @@ namespace Platformer
             jumpSound = Level.Content.Load<SoundEffect>("Sounds/jumper");
             fallSound = Level.Content.Load<SoundEffect>("Sounds/PlayerDeath");
             powerUpSound = Level.Content.Load<SoundEffect>("Sounds/Secret");
+
+            //farseer
+            floor = new Crazy(this.level.World, "Tiles/grass", new Vector2(25.0f, 35.0f), 1, this.level, new Vector2(position.X, position.Y - 15), false, 34.0f, 0.4f);
+
         }
 
         /// <summary>
         /// Resets the player to life.
         /// </summary>
         /// <param name="position">The position to come to life at.</param>
-        public void Reset(Vector2 position)
-        {
+        public void Reset(Vector2 position) {
             Position = position;
             Velocity = Vector2.Zero;
             isAlive = true;
@@ -253,33 +243,32 @@ namespace Platformer
         /// we need to reverse our motion when the orientation is in the LandscapeRight orientation.
         /// </remarks>
         public void Update(
-            GameTime gameTime, 
-            KeyboardState keyboardState, 
-            GamePadState gamePadState, 
-            TouchCollection touchState, 
+            GameTime gameTime,
+            KeyboardState keyboardState,
+            GamePadState gamePadState,
+            TouchCollection touchState,
             AccelerometerState accelState,
-            DisplayOrientation orientation)
-        {
+            DisplayOrientation orientation) {
+            
             GetInput(keyboardState, gamePadState, touchState, accelState, orientation);
 
             ApplyPhysics(gameTime);
 
-            if (IsAlive && IsOnGround)
-            {
-                if (Math.Abs(Velocity.X) - 0.02f > 0)
-                {
+            //  floor.Position = new Vector2(position.X, position.Y - 5);
+
+            // this.level.World.Step((float) gameTime.ElapsedGameTime.TotalSeconds);
+
+            if(IsAlive && IsOnGround) {
+                if(Math.Abs(Velocity.X) - 0.02f > 0) {
                     sprite.PlayAnimation(runAnimation);
                 }
-                else if (IsAlive && IsOnGround && isDucking)
-                {
+                else if(IsAlive && IsOnGround && isDucking) {
                     sprite.PlayAnimation(duckAnimation);
                 }
-                else if (isAlive && isOnGround && isLooking)
-                {
+                else if(isAlive && isOnGround && isLooking) {
                     sprite.PlayAnimation(lookAnimation);
                 }
-                else
-                {
+                else {
                     sprite.PlayAnimation(idleAnimation);
                 }
             }
@@ -289,101 +278,94 @@ namespace Platformer
             isJumping = false;
             isDucking = false;
             isLooking = false;
-			isOnWall = false;
+            isOnWall = false;
         }
 
         /// <summary>
         /// Gets player horizontal movement and jump commands from input.
         /// </summary>
         private void GetInput(
-            KeyboardState keyboardState, 
-            GamePadState gamePadState, 
+            KeyboardState keyboardState,
+            GamePadState gamePadState,
             TouchCollection touchState,
-            AccelerometerState accelState, 
-            DisplayOrientation orientation)
-        {
+            AccelerometerState accelState,
+            DisplayOrientation orientation) {
             // Get analog horizontal movement.
             movement = gamePadState.ThumbSticks.Left.X * MoveStickScale;
 
             // Ignore small movements to prevent running in place.
-            if (Math.Abs(movement) < 0.5f)
+            if(Math.Abs(movement) < 0.5f)
                 movement = 0.0f;
 
             // Move the player with accelerometer
-            if (Math.Abs(accelState.Acceleration.Y) > 0.10f)
-            {
+            if(Math.Abs(accelState.Acceleration.Y) > 0.10f) {
                 // set our movement speed
                 movement = MathHelper.Clamp(-accelState.Acceleration.Y * AccelerometerScale, -1f, 1f);
 
                 // if we're in the LandscapeLeft orientation, we must reverse our movement
-                if (orientation == DisplayOrientation.LandscapeRight)
+                if(orientation == DisplayOrientation.LandscapeRight)
                     movement = -movement;
             }
 
             // If any digital horizontal movement input is found, override the analog movement.
-            if (gamePadState.IsButtonDown(Buttons.DPadLeft) ||
+            if(gamePadState.IsButtonDown(Buttons.DPadLeft) ||
                 keyboardState.IsKeyDown(Keys.Left) ||
-                keyboardState.IsKeyDown(Keys.A))
-            {
+                keyboardState.IsKeyDown(Keys.A)) {
                 movement = -1.0f;
             }
-            else if (gamePadState.IsButtonDown(Buttons.DPadRight) ||
+            else if(gamePadState.IsButtonDown(Buttons.DPadRight) ||
                      keyboardState.IsKeyDown(Keys.Right) ||
-                     keyboardState.IsKeyDown(Keys.D))
-            {
+                     keyboardState.IsKeyDown(Keys.D)) {
                 movement = 1.0f;
             }
 
             // Check if the player wants to jump.
-			isJumping =
-                gamePadState.IsButtonDown (JumpButton) ||
-				keyboardState.IsKeyDown (Keys.Space) ||
-				keyboardState.IsKeyDown (Keys.W) ||
-				touchState.AnyTouch ();
+            isJumping =
+                gamePadState.IsButtonDown(JumpButton) ||
+                keyboardState.IsKeyDown(Keys.Space) ||
+                keyboardState.IsKeyDown(Keys.W) ||
+                touchState.AnyTouch();
 
-			isWallJumping = 
-				gamePadState.IsButtonDown (JumpButton) && isOnWall ||
-				keyboardState.IsKeyDown (Keys.Space) && keyboardState.IsKeyDown (Keys.Left) && isOnWall ||
-				keyboardState.IsKeyDown (Keys.Space) && keyboardState.IsKeyDown (Keys.Right) && isOnWall;
+            isWallJumping =
+                gamePadState.IsButtonDown(JumpButton) && isOnWall ||
+                keyboardState.IsKeyDown(Keys.Space) && keyboardState.IsKeyDown(Keys.Left) && isOnWall ||
+                keyboardState.IsKeyDown(Keys.Space) && keyboardState.IsKeyDown(Keys.Right) && isOnWall;
 
-				
+
             //check is player wants to duck:
             isDucking =
                 gamePadState.IsButtonDown(DuckButton) ||
                 keyboardState.IsKeyDown(Keys.Down);
-                
-                /*gamePadState.IsButtonDown(DuckButton) &&
-                gamePadState.IsButtonUp(Buttons.DPadRight) ||
-                keyboardState.IsKeyDown(Keys.Down) &&
-                keyboardState.IsKeyUp(Keys.Right);*/
+
+            /*gamePadState.IsButtonDown(DuckButton) &&
+            gamePadState.IsButtonUp(Buttons.DPadRight) ||
+            keyboardState.IsKeyDown(Keys.Down) &&
+            keyboardState.IsKeyUp(Keys.Right);*/
 
             isLooking =
                 gamePadState.IsButtonDown(LookButton) ||
                 keyboardState.IsKeyDown(Keys.Up);
+
         }
 
         /// <summary>
         /// Updates the player's velocity and position based on input, gravity, etc.
         /// </summary>
-        public void ApplyPhysics(GameTime gameTime)
-        {
-            float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        public void ApplyPhysics(GameTime gameTime) {
+            float elapsed = (float) gameTime.ElapsedGameTime.TotalSeconds;
 
             Vector2 previousPosition = Position;
 
             // Base velocity is a combination of horizontal movement control and
             // acceleration downward due to gravity.
-            if (IsCharged)
-            {
+            if(IsCharged) {
                 velocity.X += movement * MoveAcceleration * elapsed * 2;
 
             }
-			else if(IsPoweredUp)
-			{
-				velocity.X += movement * MoveAcceleration * elapsed * 2;
-			}
-            else
-            {
+            else if(IsPoweredUp) {
+                velocity.X += movement * MoveAcceleration * elapsed * 2;
+            }
+            else {
                 velocity.X += movement * MoveAcceleration * elapsed;
 
             }
@@ -392,7 +374,7 @@ namespace Platformer
             velocity.Y = DoJump(velocity.Y, gameTime);
 
             // Apply pseudo-drag horizontally.
-            if (IsOnGround)
+            if(IsOnGround)
                 velocity.X *= GroundDragFactor;
             else
                 velocity.X *= AirDragFactor;
@@ -402,48 +384,55 @@ namespace Platformer
 
             // Apply velocity.
             Position += velocity * elapsed;
-            Position = new Vector2((float)Math.Round(Position.X), (float)Math.Round(Position.Y));
+            Position = new Vector2((float) Math.Round(Position.X), (float) Math.Round(Position.Y));
 
             // If the player is now colliding with the level, separate them.
-            HandleCollisions();
+            HandleCollisions(gameTime);
 
             // If the collision stopped us from moving, reset the velocity to zero.
-            if (Position.X == previousPosition.X)
+            if(Position.X == previousPosition.X)
                 velocity.X = 0;
 
-            if (Position.Y == previousPosition.Y)
+            if(Position.Y == previousPosition.Y)
                 velocity.Y = 0;
 
             //Check Power up:
-            if (IsPoweredUp)
-            {
-                powerUpTime = Math.Max(0.0f, powerUpTime - (float)gameTime.ElapsedGameTime.TotalSeconds);
+            if(IsPoweredUp) {
+                powerUpTime = Math.Max(0.0f, powerUpTime - (float) gameTime.ElapsedGameTime.TotalSeconds);
                 MaxJumpTime = 0.99f;
             }
-            else if (isDucking)
-            {
+            else if(IsInvulnerable) {
+
+                invulnerableTimer += (float) gameTime.ElapsedGameTime.TotalSeconds;
+                if(invulnerableTimer > DAMAGE_INVULNERABLE_TIMESPAN) {
+                    IsInvulnerable = false;
+                }
+
+            }
+            else if(isDucking) {
                 //Jump Booster:
-                holdTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
-               // Console.WriteLine("time : " + holdTimer);
-                if (holdTimer > HOLD_TIMESPAN && holdTimer < CHARGE_JUMP_TIMESPAN)
-                {
+                holdTimer += (float) gameTime.ElapsedGameTime.TotalSeconds;
+                // Console.WriteLine("time : " + holdTimer);
+                if(holdTimer > HOLD_TIMESPAN && holdTimer < CHARGE_JUMP_TIMESPAN) {
                     IsCharged = true;
 
                 }
-                else
-                {
+                else {
                     IsCharged = false;
                 }
             }
 
-            else
-            {
+            else {
+                //reset all:
                 IsCharged = false;
                 holdTimer = 0.0f;
                 MaxJumpTime = 0.40f;
                 JumpControlPower = 0.09f;
+                invulnerableTimer = 0.0f;
 
             }
+
+            floor.Position = new Vector2(position.X, position.Y);
         }
 
         /// <summary>
@@ -463,64 +452,55 @@ namespace Platformer
         /// A new Y velocity if beginning or continuing a jump.
         /// Otherwise, the existing Y velocity.
         /// </returns>
-        private float DoJump(float velocityY, GameTime gameTime)
-        {
+        private float DoJump(float velocityY, GameTime gameTime) {
 
             // If the player wants to jump
-            if (isJumping)
-            {
-                                    
+            if(isJumping) {
+
                 // Begin or continue a jump
-				if ((!wasJumping && IsOnGround ) || jumpTime > 0.0f)
-                {
-                    if (jumpTime == 0.0f)
+                if((!wasJumping && IsOnGround) || jumpTime > 0.0f) {
+                    if(jumpTime == 0.0f)
                         jumpSound.Play();
 
-                    jumpTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    jumpTime += (float) gameTime.ElapsedGameTime.TotalSeconds;
                     sprite.PlayAnimation(jumpAnimation);
 
                 }
-			
+
 
                 // If we are in the ascent of the jump
-                if (0.0f < jumpTime && jumpTime <= MaxJumpTime)
-                {
+                if(0.0f < jumpTime && jumpTime <= MaxJumpTime) {
                     // Fully override the vertical velocity with a power curve that gives players more control over the top of the jump
-                    if (IsCharged)
-                    {
-                        velocityY = JumpLaunchVelocity * (1.0f - (float)Math.Pow(jumpTime / MaxJumpTime, JumpControlPower * 2));
+                    if(IsCharged) {
+                        velocityY = JumpLaunchVelocity * (1.0f - (float) Math.Pow(jumpTime / MaxJumpTime, JumpControlPower * 2));
                     }
 
-                    else
-                    {
-                         velocityY = JumpLaunchVelocity * (1.0f - (float)Math.Pow(jumpTime / MaxJumpTime, JumpControlPower));
+                    else {
+                        velocityY = JumpLaunchVelocity * (1.0f - (float) Math.Pow(jumpTime / MaxJumpTime, JumpControlPower));
 
                     }
                 }
 
-				else if((!wasJumping && isWallJumping ))
-				{
-					isWallJumping = false;
-					jumpSound.Play();
-					Console.WriteLine (jumpTime);
-					//velocity = -position * 5;
-					velocityY = JumpLaunchVelocity * (1.0f - (float)Math.Pow(jumpTime / MaxJumpTime, JumpControlPower));
+                else if((!wasJumping && isWallJumping)) {
+                    isWallJumping = false;
+                    jumpSound.Play();
+                    Console.WriteLine(jumpTime);
+                    //velocity = -position * 5;
+                    velocityY = JumpLaunchVelocity * (1.0f - (float) Math.Pow(jumpTime / MaxJumpTime, JumpControlPower));
 
-				}
+                }
 
-                else
-                {
+                else {
                     // Reached the apex of the jump
                     jumpTime = 0.0f;
 
                 }
             }
 
-            else
-            {
+            else {
                 // Continues not jumping or cancels a jump in progress
                 jumpTime = 0.0f;
-                
+
             }
             wasJumping = isJumping;
 
@@ -534,29 +514,26 @@ namespace Platformer
         /// axis to prevent overlapping. There is some special logic for the Y axis to
         /// handle platforms which behave differently depending on direction of movement.
         /// </summary>
-        private void HandleCollisions()
-        { 
+        private void HandleCollisions(GameTime gameTime) {
             // Get the player's bounding rectangle and find neighboring tiles.
             Rectangle bounds = BoundingRectangle;
-            int leftTile = (int)Math.Floor((float)bounds.Left / Tile.Width);
-            int rightTile = (int)Math.Ceiling(((float)bounds.Right / Tile.Width)) - 1;
-            int topTile = (int)Math.Floor((float)bounds.Top / Tile.Height);
-            int bottomTile = (int)Math.Ceiling(((float)bounds.Bottom / Tile.Height)) - 1;
-            
+            int leftTile = (int) Math.Floor((float) bounds.Left / Tile.Width);
+            int rightTile = (int) Math.Ceiling(((float) bounds.Right / Tile.Width)) - 1;
+            int topTile = (int) Math.Floor((float) bounds.Top / Tile.Height);
+            int bottomTile = (int) Math.Ceiling(((float) bounds.Bottom / Tile.Height)) - 1;
+
             // Reset flag to search for ground collision.
             isOnGround = false;
 
             //movable tiles:
-            foreach(var movableTile in level.movableTiles)
-            {
+            foreach(var movableTile in level.movableTiles) {
                 //reset flag to search for movableTile collisions:
                 movableTile.PlayerIsOn = false;
 
                 //check to see if player is on tile:
                 if((BoundingRectangle.Bottom == movableTile.BoundingRectangle.Top + 1) &&
-                    (BoundingRectangle.Left >= movableTile.BoundingRectangle.Left - (BoundingRectangle.Width /2) &&
-                    BoundingRectangle.Right <= movableTile.BoundingRectangle.Right + (BoundingRectangle.Width / 2)))
-                {
+                    (BoundingRectangle.Left >= movableTile.BoundingRectangle.Left - (BoundingRectangle.Width / 2) &&
+                    BoundingRectangle.Right <= movableTile.BoundingRectangle.Right + (BoundingRectangle.Width / 2))) {
                     movableTile.PlayerIsOn = true;
                 }
 
@@ -564,84 +541,76 @@ namespace Platformer
             }
 
 
-			//Wall Jumping:
-			//movable tiles:
-			foreach(var wallTile in level.wallTiles)
-			{
-				//reset flag to search for movableTile collisions:
-				wallTile.PlayerIsOn = false;
-                if(BoundingRectangle.Right == wallTile.BoundingRectangle.Left || BoundingRectangle.Left == wallTile.BoundingRectangle.Right)
-				{
-					wallTile.PlayerIsOn = true;
+            //Wall Jumping:
+            //movable tiles:
+            foreach(var wallTile in level.wallTiles) {
+                //reset flag to search for movableTile collisions:
+                wallTile.PlayerIsOn = false;
+                if(BoundingRectangle.Right == wallTile.BoundingRectangle.Left || BoundingRectangle.Left == wallTile.BoundingRectangle.Right) {
+                    wallTile.PlayerIsOn = true;
 
-				}
+                }
 
-				bounds = HandleCollision(bounds, wallTile.Collision, wallTile.BoundingRectangle);
-			}
+                bounds = HandleCollision(bounds, wallTile.Collision, wallTile.BoundingRectangle);
+            }
 
             //movable enemies:
-            foreach (var movableEnemy in level.enemies)
-            {
+            foreach(var movableEnemy in level.enemies) {
                 //reset flag to search for movableTile collisions:
                 movableEnemy.PlayerIsOn = false;
 
                 //check to see if player is on enemy:
-                if ((BoundingRectangle.Bottom == movableEnemy.BoundingRectangle.Top + 1) &&
+                if((BoundingRectangle.Bottom == movableEnemy.BoundingRectangle.Top + 1) &&
                     (BoundingRectangle.Left >= movableEnemy.BoundingRectangle.Left - (BoundingRectangle.Width / 2) &&
-                    BoundingRectangle.Right <= movableEnemy.BoundingRectangle.Right + (BoundingRectangle.Width / 2)))
-                {
+                    BoundingRectangle.Right <= movableEnemy.BoundingRectangle.Right + (BoundingRectangle.Width / 2))) {
                     movableEnemy.PlayerIsOn = true;
                 }
-                else if(BoundingRectangle.Right == movableEnemy.BoundingRectangle.Left)
-                {
+                else if(BoundingRectangle.Right == movableEnemy.BoundingRectangle.Left) {
                     //position.X = movableEnemy.Position.X - movableEnemy.BoundingRectangle.Width * 2;
 
 
-                  // velocity.X *= -1 / 2;
-                  // position.X += velocity.X;
-                    
+                    // velocity.X *= -1 / 2;
+                    // position.X += velocity.X;
+
                     /* velocity.X *= -1;
                      velocity.Y *= 0;
                      position += velocity;*/
-                    
-                    Vector2 depth = RectangleExtensions.GetIntersectionDepth(bounds, movableEnemy.BoundingRectangle);
-                    Position = new Vector2( movableEnemy.Position.X - movableEnemy.BoundingRectangle.Width * 2 + depth.X, Position.Y);
+
+                    // Vector2 depth = RectangleExtensions.GetIntersectionDepth(bounds, movableEnemy.BoundingRectangle);
+                    // Position = new Vector2( movableEnemy.Position.X - movableEnemy.BoundingRectangle.Width * 2 + depth.X, Position.Y);
+
+                    //IsInvulnerable = true;
+
                     //IsInvulerable = true;
 
 
-                 //   Position = new Vector2(movableEnemy.Velocity);
+                    //   Position = new Vector2(movableEnemy.Velocity);
                 }
 
                 bounds = HandleCollision(bounds, movableEnemy.Collision, movableEnemy.BoundingRectangle);
             }
 
             // For each potentially colliding tile,
-            for (int y = topTile; y <= bottomTile; ++y)
-            {
-                for (int x = leftTile; x <= rightTile; ++x)
-                {
+            for(int y = topTile; y <= bottomTile; ++y) {
+                for(int x = leftTile; x <= rightTile; ++x) {
                     // If this tile is collidable,
                     TileCollision collision = Level.GetCollision(x, y);
-                    if (collision != TileCollision.Passable)
-                    {
+                    if(collision != TileCollision.Passable) {
                         // Determine collision depth (with direction) and magnitude.
                         Rectangle tileBounds = Level.GetBounds(x, y);
                         Vector2 depth = RectangleExtensions.GetIntersectionDepth(bounds, tileBounds);
-                        if (depth != Vector2.Zero)
-                        {
+                        if(depth != Vector2.Zero) {
                             float absDepthX = Math.Abs(depth.X);
                             float absDepthY = Math.Abs(depth.Y);
 
                             // Resolve the collision along the shallow axis.
-                            if (absDepthY < absDepthX || collision == TileCollision.Platform)
-                            {
+                            if(absDepthY < absDepthX || collision == TileCollision.Platform) {
                                 // If we crossed the top of a tile, we are on the ground.
-                                if (previousBottom <= tileBounds.Top)
+                                if(previousBottom <= tileBounds.Top)
                                     isOnGround = true;
 
                                 // Ignore platforms, unless we are on the ground.
-                                if (collision == TileCollision.Impassable || IsOnGround)
-                                {
+                                if(collision == TileCollision.Impassable || IsOnGround) {
                                     // Resolve the collision along the Y axis.
                                     Position = new Vector2(Position.X, Position.Y + depth.Y);
 
@@ -649,7 +618,7 @@ namespace Platformer
                                     bounds = BoundingRectangle;
                                 }
                             }
-                            else if (collision == TileCollision.Impassable) // Ignore platforms.
+                            else if(collision == TileCollision.Impassable) // Ignore platforms.
                             {
                                 // Resolve the collision along the X axis.
                                 Position = new Vector2(Position.X + depth.X, Position.Y);
@@ -667,38 +636,34 @@ namespace Platformer
         }
 
 
-private Rectangle HandleCollision(Rectangle bounds, TileCollision collision, Rectangle tileBounds)
-{
-    Vector2 depth = RectangleExtensions.GetIntersectionDepth(bounds, tileBounds);
-    if (depth != Vector2.Zero)
-    {
-        float absDepthX = Math.Abs(depth.X);
-        float absDepthY = Math.Abs(depth.Y);
-        // Resolve the collision along the shallow axis.
-        if (absDepthY < absDepthX || collision == TileCollision.Platform)
+        private Rectangle HandleCollision(Rectangle bounds, TileCollision collision, Rectangle tileBounds) {
+            Vector2 depth = RectangleExtensions.GetIntersectionDepth(bounds, tileBounds);
+            if(depth != Vector2.Zero) {
+                float absDepthX = Math.Abs(depth.X);
+                float absDepthY = Math.Abs(depth.Y);
+                // Resolve the collision along the shallow axis.
+                if(absDepthY < absDepthX || collision == TileCollision.Platform) {
+                    // If we crossed the top of a tile, we are on the ground.
+                    if(previousBottom <= tileBounds.Top)
+                        isOnGround = true;
+                    // Ignore platforms, unless we are on the ground.
+                    if(collision == TileCollision.Impassable || IsOnGround) {
+                        // Resolve the collision along the Y axis.
+                        Position = new Vector2(Position.X, Position.Y + depth.Y);
+                        // Perform further collisions with the new bounds.
+                        bounds = BoundingRectangle;
+                    }
+                }
+                else if(collision == TileCollision.Impassable) // Ignore platforms.
         {
-            // If we crossed the top of a tile, we are on the ground.
-            if (previousBottom <= tileBounds.Top)
-                isOnGround = true;
-            // Ignore platforms, unless we are on the ground.
-            if (collision == TileCollision.Impassable || IsOnGround)
-            {
-                // Resolve the collision along the Y axis.
-                Position = new Vector2(Position.X, Position.Y + depth.Y);
-                // Perform further collisions with the new bounds.
-                bounds = BoundingRectangle;
+                    // Resolve the collision along the X axis.
+                    Position = new Vector2(Position.X + depth.X, Position.Y);
+                    // Perform further collisions with the new bounds.
+                    bounds = BoundingRectangle;
+                }
             }
+            return bounds;
         }
-        else if (collision == TileCollision.Impassable) // Ignore platforms.
-        {
-            // Resolve the collision along the X axis.
-            Position = new Vector2(Position.X + depth.X, Position.Y);
-            // Perform further collisions with the new bounds.
-            bounds = BoundingRectangle;
-        }
-    }
-    return bounds;
-}
 
 
 
@@ -709,11 +674,10 @@ private Rectangle HandleCollision(Rectangle bounds, TileCollision collision, Rec
         /// The enemy who killed the player. This parameter is null if the player was
         /// not killed by an enemy (fell into a hole).
         /// </param>
-        public void OnKilled(Enemy killedBy)
-        {
+        public void OnKilled(Enemy killedBy) {
             isAlive = false;
 
-            if (killedBy != null)
+            if(killedBy != null)
                 killedSound.Play();
             else
                 fallSound.Play();
@@ -724,8 +688,7 @@ private Rectangle HandleCollision(Rectangle bounds, TileCollision collision, Rec
         /// <summary>
         /// Called when this player reaches the level's exit.
         /// </summary>
-        public void OnReachedExit()
-        {
+        public void OnReachedExit() {
             sprite.PlayAnimation(celebrateAnimation);
         }
 
@@ -733,46 +696,44 @@ private Rectangle HandleCollision(Rectangle bounds, TileCollision collision, Rec
         /// <summary>
         /// Draws the animated player.
         /// </summary>
-        public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
-        {
+        public void Draw(GameTime gameTime, SpriteBatch spriteBatch) {
             // Flip the sprite to face the way we are moving.
-            if (Velocity.X > 0)
+            if(Velocity.X > 0)
                 flip = SpriteEffects.FlipHorizontally;
-            else if (Velocity.X < 0)
+            else if(Velocity.X < 0)
                 flip = SpriteEffects.None;
 
             //Calculate a tiny color based on power up state:
             Color color;
-            if (IsPoweredUp)
-            {
-                float t = ((float)gameTime.TotalGameTime.TotalSeconds + powerUpTime / MaxPowerUpTime) * 20.0f;
-                int colorIndex = (int)t % poweredUpColors.Length;
+            if(IsPoweredUp) {
+                float t = ((float) gameTime.TotalGameTime.TotalSeconds + powerUpTime / MaxPowerUpTime) * 20.0f;
+                int colorIndex = (int) t % poweredUpColors.Length;
                 color = poweredUpColors[colorIndex];
             }
-            else if (IsCharged)
-            {
-                float t = ((float)gameTime.TotalGameTime.TotalSeconds + holdTimer / HOLD_TIMESPAN) * 20.0f;
-                int colorIndex = (int)t % chargedUpColors.Length;
+            else if(IsCharged) {
+                float t = ((float) gameTime.TotalGameTime.TotalSeconds + holdTimer / HOLD_TIMESPAN) * 20.0f;
+                int colorIndex = (int) t % chargedUpColors.Length;
                 color = chargedUpColors[colorIndex];
             }
-            else if (IsInvulerable)
-            {
-                float t = ((float)gameTime.TotalGameTime.TotalSeconds + powerUpTime / MaxVulerableTime) * 20.0f;
-                int colorIndex = (int)t % invulerableColors.Length;
-                color = invulerableColors[colorIndex];
+            else if(IsInvulnerable) {
+                float t = ((float) gameTime.TotalGameTime.TotalSeconds + powerUpTime / DAMAGE_INVULNERABLE_TIMESPAN) * 20.0f;
+                int colorIndex = (int) t % invulerableColors.Length;
+                color = new Color(invulerableColors[colorIndex], 0);
             }
-            else
-            {
+            else {
                 color = Color.White;
             }
 
+            //phyrics
+
+
+            // floor.Draw(spriteBatch);
             // Draw that sprite.
             sprite.Draw(gameTime, spriteBatch, Position, flip, color);
 
         }
 
-        public void PowerUp()
-        {
+        public void PowerUp() {
             powerUpTime = MaxPowerUpTime;
             powerUpSound.Play();
         }
