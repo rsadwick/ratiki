@@ -39,6 +39,7 @@ namespace Platformer {
         private SoundEffect jumpSound;
         private SoundEffect fallSound;
         private Crazy floor;
+        private DrawablePhysicsObject farseerRect;
 
         public Level Level {
             get { return level; }
@@ -189,6 +190,7 @@ namespace Platformer {
             LoadContent();
 
             Reset(position);
+           
         }
 
         /// <summary>
@@ -218,8 +220,9 @@ namespace Platformer {
             powerUpSound = Level.Content.Load<SoundEffect>("Sounds/Secret");
 
             //farseer
-            floor = new Crazy(this.level.World, "Tiles/grass", new Vector2(25.0f, 35.0f), 1, this.level, new Vector2(position.X, position.Y - 15), false, 34.0f, 0.4f);
-
+            //floor = new Crazy(this.level.World, "Tiles/grass", new Vector2(25.0f, 35.0f), 0.1f, this.level, new Vector2(position.X, position.Y - 15), false, 134.0f, 0.4f); 
+            farseerRect = new DrawablePhysicsObject(this.level.World, "Tiles/grass", new Vector2(25.0f, 35.0f), 0.1f, this.level);
+            farseerRect.Body.BodyType = BodyType.Static; 
         }
 
         /// <summary>
@@ -254,9 +257,9 @@ namespace Platformer {
 
             ApplyPhysics(gameTime);
 
-            //  floor.Position = new Vector2(position.X, position.Y - 5);
+             // floor.Position = new Vector2(position.X, position.Y - 5);
 
-            // this.level.World.Step((float) gameTime.ElapsedGameTime.TotalSeconds);
+           //  this.level.World.Step((float) gameTime.ElapsedGameTime.TotalSeconds);
 
             if(IsAlive && IsOnGround) {
                 if(Math.Abs(Velocity.X) - 0.02f > 0) {
@@ -279,6 +282,9 @@ namespace Platformer {
             isDucking = false;
             isLooking = false;
             isOnWall = false;
+
+           // floor.Position = new Vector2(position.X, position.Y);
+            farseerRect.Position = new Vector2(position.X, position.Y - 15);
         }
 
         /// <summary>
@@ -432,7 +438,7 @@ namespace Platformer {
 
             }
 
-            floor.Position = new Vector2(position.X, position.Y);
+            
         }
 
         /// <summary>
@@ -728,6 +734,7 @@ namespace Platformer {
 
 
             // floor.Draw(spriteBatch);
+            //farseerRect.Draw(spriteBatch);
             // Draw that sprite.
             sprite.Draw(gameTime, spriteBatch, Position, flip, color);
 

@@ -77,6 +77,7 @@ namespace Platformer
 
 			this.Size = size;
 			if (texture != null) {
+            Console.WriteLine(texture);
 				this.texture = level.Content.Load<Texture2D>(texture);
 				origin = new Vector2(this.texture.Width / 2.0f, this.texture.Height / 2.0f);
 			}
