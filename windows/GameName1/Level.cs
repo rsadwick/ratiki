@@ -2,8 +2,7 @@
 //-----------------------------------------------------------------------------
 // Level.cs
 //
-// Microsoft XNA Community Game Platform
-// Copyright (C) Microsoft Corporation. All rights reserved.
+// Ryan Sadwick
 //-----------------------------------------------------------------------------
 #endregion
 
@@ -19,8 +18,6 @@ using Microsoft.Xna.Framework.Input;
 using FarseerPhysics.Dynamics;
 using FarseerPhysics.Factories;
 
-
-
 namespace Platformer
 {
     /// <summary>
@@ -33,6 +30,7 @@ namespace Platformer
         // Physical structure of the level.
         private Tile[,] tiles;
         private Layer[] layers;
+        //camera:
         private float cameraPositionX;
 		public float cameraPositionY;
         const float fadeTime = 12.0f;  // TODO: Change this value to your liking. Bigger numbers equal more smoothing.
@@ -48,8 +46,8 @@ namespace Platformer
         Player player;
 
         private List<Gem> gems = new List<Gem>();
-		private List <Crazy> crates = new List<Crazy>();
-		private List <Crazy> floors = new List<Crazy>();
+        private List<DrawablePhysicsObject> crates = new List<DrawablePhysicsObject>();
+        private List<DrawablePhysicsObject> floors = new List<DrawablePhysicsObject>();
 
         public World World {
             get { return world; }
@@ -98,8 +96,6 @@ namespace Platformer
 
         private SoundEffect exitReachedSound;
 
-		//farseer
-
 		private Texture2D sprite;
 
 
@@ -137,13 +133,14 @@ namespace Platformer
             exitReachedSound = Content.Load<SoundEffect>("Sounds/StageCleared");
         }
 
-		private void SpawnCrate()
+		public void SpawnCrate()
 		{
-			//Console.WriteLine (Content.Load<Texture2D> ("Sprites/sphere.png").ToString());
-			Crazy crate;
-			crate = new Crazy(world, "Tiles/grass.png", new Vector2(50.0f, 50.0f), 0.1f, this, new Vector2(random.Next(10, 10), 1), true, 20.0f, 0.3f);
-			crate.Position = new Vector2(random.Next(10, 10), 1);
-            crate.body.BodyType = BodyType.Dynamic;
+            DrawablePhysicsObject crate;
+            crate = new DrawablePhysicsObject(world, "Tiles/grass.png", new Vector2(50.0f, 50.0f), 0.1f, this);
+            crate.Position = new Vector2(random.Next(10, 100), 100);
+            crate.Body.BodyType = BodyType.Dynamic;
+            crate.Body.Friction = 20.0f;
+            crate.Body.Restitution = 0.3f;
 			crates.Add(crate);
 		}
 
@@ -272,7 +269,10 @@ namespace Platformer
 
 				//crates
 				case 'f':
-					return LoadCrateTile (x, y, TileCollision.Platform);
+					return LoadCrateTile (x, y, TileCollision.Passable);
+
+                case 'L':
+                    return LoadTile("ladder_mid", TileCollision.Ladder);
 
                 // Unknown tile type character
                 default:
@@ -312,26 +312,26 @@ namespace Platformer
 
 		private Tile LoadFloorTile(int x, int y, TileCollision collision)
 		{
-
-			Point position = GetBounds(x, y).Center;
-            Crazy floor = new Crazy(world, "Tiles/grass", new Vector2(50.0f, 50.0f), 1, this, new Vector2(position.X, position.Y), false, 20.0f, 0.3f);
+            Point position = GetBounds(x, y).Center;
+            DrawablePhysicsObject floor = new DrawablePhysicsObject(world, "Tiles/grass.png", new Vector2(50.0f, 50.0f), 0.1f, this);
             floor.Position = new Vector2(position.X, position.Y);
-            floor.body.BodyType = BodyType.Static;
-			floors.Add(floor);
-
+            floor.Body.BodyType = BodyType.Static;
+            floor.Body.Friction = 20.0f;
+            floor.Body.Restitution = 0.3f;
+            floors.Add(floor);
 			return new Tile(null, TileCollision.Impassable);
 		}
 
 		private Tile LoadCrateTile(int x, int y, TileCollision collision)
 		{
-
 			Point position = GetBounds (x, y).Center;
-			random = new Random();
-            Crazy crate = new Crazy(world, "Tiles/grass", new Vector2(50.0f, 50.0f), 0.1f, this, new Vector2(random.Next(10, 10), 1), true, 20.0f, 0.3f);
-			crate.Position = new Vector2 (position.X, position.Y);
-            crate.body.BodyType = BodyType.Dynamic;
-			crates.Add (crate);
-			return new Tile(null, TileCollision.Platform);
+            DrawablePhysicsObject crate = new DrawablePhysicsObject(world, "Tiles/grass.png", new Vector2(50.0f, 50.0f), 0.1f, this);
+            crate.Position = new Vector2(position.X, position.Y);
+            crate.Body.BodyType = BodyType.Dynamic;
+            crate.Body.Friction = 20.0f;
+            crate.Body.Restitution = 0.3f;
+            crates.Add(crate);
+			return new Tile(null, TileCollision.Passable);
 		}
 
 
@@ -431,6 +431,36 @@ namespace Platformer
             return tiles[x, y].Collision;
         }
 
+        public TileCollision GetTileCollisionBehindPlayer(Vector2 playerPosition)
+        {
+            int x = (int)playerPosition.X / Tile.Width;
+            int y = (int)(playerPosition.Y - 1) / Tile.Height;
+
+            //prevent escapping past level ends:
+            if(x == Width)
+                return TileCollision.Impassable;
+            //allow jumping past the level top and falling through bottom:
+            if(y == Height)
+                return TileCollision.Passable;
+
+            return tiles[x, y].Collision;
+        }
+
+        public TileCollision GetTileCollisionBelowPlayer(Vector2 playerPosition)
+        {
+            int x = (int)playerPosition.X / Tile.Width;
+            int y = (int)(playerPosition.Y) / Tile.Height;
+
+            if(x == Width)
+                return TileCollision.Impassable;
+            //allow jumping past the level top and falling through bottom:
+            if(y == Height)
+                return TileCollision.Passable;
+
+            return tiles[x, y].Collision;
+
+        }
+
         /// <summary>
         /// Gets the bounding rectangle of a tile in world space.
         /// </summary>        
@@ -502,7 +532,6 @@ namespace Platformer
                 UpdateMovableTiles(gameTime);
 				UpdateWallTiles (gameTime);
 
-
                 // The player has reached the exit if they are standing on the ground and
                 // his bounding rectangle contains the center of the exit tile. They can only
                 // exit when they have collected all of the gems.
@@ -518,9 +547,7 @@ namespace Platformer
             if (timeRemaining < TimeSpan.Zero)
                 timeRemaining = TimeSpan.Zero;
 
-
             world.Step((float) gameTime.ElapsedGameTime.TotalSeconds);
-
         }
 
         /// <summary>
@@ -556,8 +583,6 @@ namespace Platformer
                 {
                     //Make player move with tile if the player is on top of tile
                     player.Position += enemy.Velocity;
-
-					SpawnCrate ();
                 } 
 
                 // Enemy collisions: if enemy collides with player - power up or not:
@@ -626,8 +651,7 @@ namespace Platformer
 				}
 			}
 		}
-
-
+ 
         /// <summary>
         /// Called when the player is killed.
         /// </summary>
@@ -695,18 +719,16 @@ namespace Platformer
             foreach (Gem gem in gems)
                 gem.Draw(gameTime, spriteBatch);
 
-			foreach (Crazy floor in floors)
+			foreach (DrawablePhysicsObject floor in floors)
 			{
 				floor.Draw(spriteBatch);
 			}
 
-			foreach (Crazy crate in crates)
+            foreach(DrawablePhysicsObject crate in crates)
 			{
 				crate.Draw(spriteBatch);
 			}
 
-            
-           
             Player.Draw(gameTime, spriteBatch);
 
 

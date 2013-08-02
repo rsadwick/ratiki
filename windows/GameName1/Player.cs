@@ -28,6 +28,8 @@ namespace Platformer {
         private Animation lookAnimation;
         private Animation celebrateAnimation;
         private Animation dieAnimation;
+        private Animation ladderUpAnimation;
+        private Animation ladderDownAnimation;
         private SpriteEffects flip = SpriteEffects.None;
         private AnimationPlayer sprite;
         private const float HOLD_TIMESPAN = 0.50f;
@@ -38,7 +40,6 @@ namespace Platformer {
         private SoundEffect killedSound;
         private SoundEffect jumpSound;
         private SoundEffect fallSound;
-        private Crazy floor;
         private DrawablePhysicsObject farseerRect;
 
         public Level Level {
@@ -139,17 +140,28 @@ namespace Platformer {
         }
         bool isOnGround;
 
-
+        //Wall jumping
         public bool IsOnWall {
             get { return isOnWall; }
             set { isOnWall = value; }
         }
         bool isOnWall;
+        
+        //Ladders & climbing
+        private const int LadderAlignment = 12;
+        private bool isClimbing;
+        public bool IsClimbing
+        {
+            get { return isClimbing;}
+        }
+
+        private bool wasClimbing;
+        private Vector2 movement;
 
         /// <summary>
         /// Current user movement input.
         /// </summary>
-        private float movement;
+       // private float movement;
 
         // Jumping state
 
@@ -168,7 +180,6 @@ namespace Platformer {
 
         private Rectangle localBounds;
 
-
         /// <summary>
         /// Gets a rectangle which bounds this player in world space.
         /// </summary>
@@ -186,9 +197,7 @@ namespace Platformer {
         /// </summary>
         public Player(Level level, Vector2 position) {
             this.level = level;
-
             LoadContent();
-
             Reset(position);
            
         }
@@ -205,6 +214,8 @@ namespace Platformer {
             lookAnimation = new Animation(Level.Content.Load<Texture2D>("Sprites/Player/Up"), 0.1f, true);
             celebrateAnimation = new Animation(Level.Content.Load<Texture2D>("Sprites/Player/Celebrate"), 0.1f, false);
             dieAnimation = new Animation(Level.Content.Load<Texture2D>("Sprites/Player/Die"), 0.1f, false);
+            ladderUpAnimation = new Animation(Level.Content.Load<Texture2D>("Sprites/Player/Jump2"), 0.1f, true);
+            ladderDownAnimation = new Animation(Level.Content.Load<Texture2D>("Sprites/Player/Jump2"), 0.1f, true);
 
             // Calculate bounds within texture size.            
             int width = (int) (idleAnimation.FrameWidth * 0.4);
@@ -219,8 +230,7 @@ namespace Platformer {
             fallSound = Level.Content.Load<SoundEffect>("Sounds/PlayerDeath");
             powerUpSound = Level.Content.Load<SoundEffect>("Sounds/Secret");
 
-            //farseer
-            //floor = new Crazy(this.level.World, "Tiles/grass", new Vector2(25.0f, 35.0f), 0.1f, this.level, new Vector2(position.X, position.Y - 15), false, 134.0f, 0.4f); 
+            //farseer body on player:
             farseerRect = new DrawablePhysicsObject(this.level.World, "Tiles/grass", new Vector2(25.0f, 35.0f), 0.1f, this.level);
             farseerRect.Body.BodyType = BodyType.Static; 
         }
@@ -257,10 +267,9 @@ namespace Platformer {
 
             ApplyPhysics(gameTime);
 
-             // floor.Position = new Vector2(position.X, position.Y - 5);
-
            //  this.level.World.Step((float) gameTime.ElapsedGameTime.TotalSeconds);
 
+            //Alive and on ground:
             if(IsAlive && IsOnGround) {
                 if(Math.Abs(Velocity.X) - 0.02f > 0) {
                     sprite.PlayAnimation(runAnimation);
@@ -275,15 +284,24 @@ namespace Platformer {
                     sprite.PlayAnimation(idleAnimation);
                 }
             }
-
+            //Alive and climbing:
+            else if(IsAlive && !IsOnGround && IsClimbing)
+            {
+                if(Velocity.Y - 0.02f > 0)
+                    sprite.PlayAnimation(ladderDownAnimation);
+                else
+                    sprite.PlayAnimation(ladderUpAnimation);
+            }
+                
             // Clear input.
-            movement = 0.0f;
+            movement = Vector2.Zero;
             isJumping = false;
             isDucking = false;
             isLooking = false;
             isOnWall = false;
+            isClimbing = false;
 
-           // floor.Position = new Vector2(position.X, position.Y);
+            //update physics rectangle:
             farseerRect.Position = new Vector2(position.X, position.Y - 15);
         }
 
@@ -297,32 +315,31 @@ namespace Platformer {
             AccelerometerState accelState,
             DisplayOrientation orientation) {
             // Get analog horizontal movement.
-            movement = gamePadState.ThumbSticks.Left.X * MoveStickScale;
+            movement.X = gamePadState.ThumbSticks.Left.X * MoveStickScale;
+            movement.Y = gamePadState.ThumbSticks.Left.Y * MoveStickScale;
 
             // Ignore small movements to prevent running in place.
-            if(Math.Abs(movement) < 0.5f)
-                movement = 0.0f;
-
-            // Move the player with accelerometer
-            if(Math.Abs(accelState.Acceleration.Y) > 0.10f) {
-                // set our movement speed
-                movement = MathHelper.Clamp(-accelState.Acceleration.Y * AccelerometerScale, -1f, 1f);
-
-                // if we're in the LandscapeLeft orientation, we must reverse our movement
-                if(orientation == DisplayOrientation.LandscapeRight)
-                    movement = -movement;
-            }
+            if(Math.Abs(movement.X) < 0.5f)
+                movement.X = 0.0f;
+            if(Math.Abs(movement.Y) < 0.5f)
+                movement.Y = 0.0f;
 
             // If any digital horizontal movement input is found, override the analog movement.
             if(gamePadState.IsButtonDown(Buttons.DPadLeft) ||
                 keyboardState.IsKeyDown(Keys.Left) ||
                 keyboardState.IsKeyDown(Keys.A)) {
-                movement = -1.0f;
+                  movement.X = -1.0f;
             }
             else if(gamePadState.IsButtonDown(Buttons.DPadRight) ||
                      keyboardState.IsKeyDown(Keys.Right) ||
                      keyboardState.IsKeyDown(Keys.D)) {
-                movement = 1.0f;
+                  movement.X = 1.0f;
+            }
+            
+            //spawn crates for testing:
+            if(keyboardState.IsKeyDown(Keys.P))
+            {
+                level.SpawnCrate();
             }
 
             // Check if the player wants to jump.
@@ -337,21 +354,82 @@ namespace Platformer {
                 keyboardState.IsKeyDown(Keys.Space) && keyboardState.IsKeyDown(Keys.Left) && isOnWall ||
                 keyboardState.IsKeyDown(Keys.Space) && keyboardState.IsKeyDown(Keys.Right) && isOnWall;
 
-
-            //check is player wants to duck:
-            isDucking =
-                gamePadState.IsButtonDown(DuckButton) ||
-                keyboardState.IsKeyDown(Keys.Down);
-
-            /*gamePadState.IsButtonDown(DuckButton) &&
-            gamePadState.IsButtonUp(Buttons.DPadRight) ||
-            keyboardState.IsKeyDown(Keys.Down) &&
-            keyboardState.IsKeyUp(Keys.Right);*/
-
             isLooking =
                 gamePadState.IsButtonDown(LookButton) ||
                 keyboardState.IsKeyDown(Keys.Up);
 
+            //Ladders:
+            if(gamePadState.IsButtonDown(Buttons.DPadUp) ||
+               keyboardState.IsKeyDown(Keys.Up) ||
+               keyboardState.IsKeyDown(Keys.W))
+               {
+                   isClimbing = false;
+
+                   if(IsAlignedToLadder())
+                   {
+                        //We need to check the tile behind the player:
+                        if(level.GetTileCollisionBehindPlayer(position) == TileCollision.Ladder)
+                        {
+                            isClimbing = true;
+                            isJumping = false;
+                            isDucking = false;
+                            isWallJumping = false;
+                            isOnGround = false;
+                            movement.Y = -0.2f;
+                        }
+                   }
+                }
+                
+                else if(gamePadState.IsButtonDown(DuckButton) ||
+                    keyboardState.IsKeyDown(Keys.Down) ||
+                    keyboardState.IsKeyDown(Keys.S))
+                {
+                    isClimbing = false;
+                    //check for ladder:
+                    if(IsAlignedToLadder())
+                    {
+                        if(level.GetTileCollisionBelowPlayer(level.Player.Position) == TileCollision.Ladder)
+                        {
+                            isClimbing = true;
+                            isJumping = false;
+                            isDucking = false;
+                            isWallJumping = false;
+                            isOnGround = false;
+                            movement.Y = 0.2f;
+                        }
+                    }
+                    //if not on a ladder, duck:
+                    else 
+                    {
+                        isDucking = true;
+                    }
+                }      
+        }
+
+        /// <summary>
+        /// Ladder logic.
+        /// Figure out if the player is aligned on the ladder tile
+        /// </summary>
+        /// 
+        
+        private bool IsAlignedToLadder()
+        {
+            int playerOffset = ((int)position.X % Tile.Width) - Tile.Center;
+
+            if(Math.Abs(playerOffset) <= LadderAlignment && 
+                                         level.GetTileCollisionBelowPlayer( new Vector2(level.Player.position.X, 
+                                                                                         level.Player.position.Y + 1 )) == TileCollision.Ladder ||
+                                         level.GetTileCollisionBehindPlayer(new Vector2(level.Player.position.X,
+                                                                                         level.Player.position.Y -1)) == TileCollision.Ladder)
+            {
+                //align the player with the middle of tile:
+                position.X -= playerOffset;
+                return true;
+            }
+            else
+            {
+                return false;
+            }    
         }
 
         /// <summary>
@@ -365,18 +443,28 @@ namespace Platformer {
             // Base velocity is a combination of horizontal movement control and
             // acceleration downward due to gravity.
             if(IsCharged) {
-                velocity.X += movement * MoveAcceleration * elapsed * 2;
+                velocity.X += movement.X * MoveAcceleration * elapsed * 2;
 
             }
             else if(IsPoweredUp) {
-                velocity.X += movement * MoveAcceleration * elapsed * 2;
+                velocity.X += movement.X * MoveAcceleration * elapsed * 2;
+            }
+
+            if(!isClimbing) {
+                if(wasClimbing)
+                    velocity.Y = 0;
+                else
+                    velocity.Y = MathHelper.Clamp(
+                        velocity.Y + GravityAcceleration * elapsed,
+                        -MaxFallSpeed,
+                        MaxFallSpeed);
             }
             else {
-                velocity.X += movement * MoveAcceleration * elapsed;
-
+                velocity.Y = movement.Y * MoveAcceleration * elapsed;
             }
-            velocity.Y = MathHelper.Clamp(velocity.Y + GravityAcceleration * elapsed, -MaxFallSpeed, MaxFallSpeed);
 
+
+            velocity.X += movement.X * MoveAcceleration * elapsed;
             velocity.Y = DoJump(velocity.Y, gameTime);
 
             // Apply pseudo-drag horizontally.
@@ -612,8 +700,22 @@ namespace Platformer {
                             // Resolve the collision along the shallow axis.
                             if(absDepthY < absDepthX || collision == TileCollision.Platform) {
                                 // If we crossed the top of a tile, we are on the ground.
-                                if(previousBottom <= tileBounds.Top)
-                                    isOnGround = true;
+                                //LADDER
+                                // If we crossed the top of a tile, we are on the ground.
+                                if(previousBottom <= tileBounds.Top) {
+                                    if(collision == TileCollision.Ladder) {
+                                        if(!isClimbing && !isJumping) {
+                                            // When walking over a ladder
+                                            isOnGround = true;
+                                        }
+                                    }
+                                    else {
+                                        isOnGround = true;
+                                        isClimbing = false;
+                                        isJumping = false;
+                                        isWallJumping = false;
+                                    }
+                                }
 
                                 // Ignore platforms, unless we are on the ground.
                                 if(collision == TileCollision.Impassable || IsOnGround) {
@@ -630,6 +732,13 @@ namespace Platformer {
                                 Position = new Vector2(Position.X + depth.X, Position.Y);
 
                                 // Perform further collisions with the new bounds.
+                                bounds = BoundingRectangle;
+                            }
+                            else if(collision == TileCollision.Ladder && !isClimbing)
+                            {
+                                //when walking in front of a ladder, falling off a ladder but not climbing:
+                                //Resolve the collision along the Y axis:
+                                Position = new Vector2(Position.X, Position.Y);
                                 bounds = BoundingRectangle;
                             }
                         }
@@ -670,8 +779,6 @@ namespace Platformer {
             }
             return bounds;
         }
-
-
 
         /// <summary>
         /// Called when the player has been killed.
@@ -729,15 +836,11 @@ namespace Platformer {
             else {
                 color = Color.White;
             }
-
-            //phyrics
-
-
-            // floor.Draw(spriteBatch);
+            
+            //show farseer rect:
             //farseerRect.Draw(spriteBatch);
             // Draw that sprite.
             sprite.Draw(gameTime, spriteBatch, Position, flip, color);
-
         }
 
         public void PowerUp() {

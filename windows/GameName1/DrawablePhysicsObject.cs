@@ -13,9 +13,13 @@ namespace Platformer {
         public Body Body { get; set; }
 
         public Vector2 Position {
-            get { return CoordinateHelper.ToScreen(Body.Position); }
+            get {
+                return CoordinateHelper.ToScreen(Body.Position);
+            }
             set { Body.Position = CoordinateHelper.ToWorld(value); }
         }
+        Vector2 position;
+        private bool isUnit;
 
         public Texture2D texture;
 
@@ -41,7 +45,6 @@ namespace Platformer {
             Body = BodyFactory.CreateRectangle(world, size.X * CoordinateHelper.pixelToUnit, size.Y * CoordinateHelper.pixelToUnit, 1);
             Body.BodyType = BodyType.Dynamic;
             this.Size = size;
-            //this.texture = texture;
             this.texture = level.Content.Load<Texture2D>(texture);
         }
 
@@ -55,9 +58,6 @@ namespace Platformer {
         public DrawablePhysicsObject(World world, string texture, float diameter, float mass, Level level) {
             size = new Vector2(diameter, diameter);
             Body = BodyFactory.CreateCircle(world, (diameter / 2.0f) * CoordinateHelper.pixelToUnit, 1);
-
-            Body.BodyType = BodyType.Dynamic;
-
             this.Size = size;
             this.texture = level.Content.Load<Texture2D>(texture);
         }

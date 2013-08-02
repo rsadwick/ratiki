@@ -35,6 +35,8 @@ namespace Platformer
         /// past it to the left and right, but can not fall down through the top of it.
         /// </summary>
         Platform = 2,
+
+        Ladder = 3,
     }
 
     /// <summary>
@@ -47,6 +49,7 @@ namespace Platformer
 
         public const int Width = 40;
         public const int Height = 32;
+        public const int Center = Width / 2;
 
         public static readonly Vector2 Size = new Vector2(Width, Height);
 
