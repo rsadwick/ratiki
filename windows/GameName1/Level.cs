@@ -141,6 +141,7 @@ namespace Platformer
             crate.Body.BodyType = BodyType.Dynamic;
             crate.Body.Friction = 20.0f;
             crate.Body.Restitution = 0.3f;
+			crate.Body.SleepingAllowed = false;
 			crates.Add(crate);
 		}
 
@@ -232,13 +233,13 @@ namespace Platformer
 
                 // Various enemies
                 case 'A':
-                    return LoadEnemyTile(x, y, "MonsterA", TileCollision.Platform);
+                    return LoadEnemyTile(x, y, "MonsterA", TileCollision.Passable);
                 case 'B':
-                    return LoadEnemyTile(x, y, "MonsterB", TileCollision.Platform);
+					return LoadEnemyTile(x, y, "MonsterB", TileCollision.Passable);
                 case 'C':
-                    return LoadEnemyTile(x, y, "MonsterC", TileCollision.Platform);
+					return LoadEnemyTile(x, y, "MonsterC", TileCollision.Passable);
                 case 'D':
-                    return LoadEnemyTile(x, y, "MonsterD", TileCollision.Platform);
+					return LoadEnemyTile(x, y, "MonsterD", TileCollision.Passable);
 
                 // Platform block
                 case '~':
@@ -272,7 +273,7 @@ namespace Platformer
 					return LoadCrateTile (x, y, TileCollision.Passable);
 
                 case 'L':
-                    return LoadTile("ladder_mid", TileCollision.Ladder);
+                    return LoadTile("BlockB1", TileCollision.Ladder);
 
                 // Unknown tile type character
                 default:
@@ -386,7 +387,7 @@ namespace Platformer
         {
             Vector2 position = RectangleExtensions.GetBottomCenter(GetBounds(x, y));
             enemies.Add(new Enemy(this, position, spriteSet, collision));
-            return new Tile(null, TileCollision.Passable);
+			return new Tile(null, collision);
         }
 
 
@@ -436,6 +437,10 @@ namespace Platformer
             int x = (int)playerPosition.X / Tile.Width;
             int y = (int)(playerPosition.Y - 1) / Tile.Height;
 
+			//prevent out of range:
+			if (y < 0)
+				y = 0;
+
             //prevent escapping past level ends:
             if(x == Width)
                 return TileCollision.Impassable;
@@ -443,13 +448,17 @@ namespace Platformer
             if(y == Height)
                 return TileCollision.Passable;
 
-            return tiles[x, y].Collision;
+             return tiles[x, y].Collision;
         }
 
         public TileCollision GetTileCollisionBelowPlayer(Vector2 playerPosition)
         {
             int x = (int)playerPosition.X / Tile.Width;
             int y = (int)(playerPosition.Y) / Tile.Height;
+
+			//prevent out of range:
+			if (y < 0)
+				y = 0;
 
             if(x == Width)
                 return TileCollision.Impassable;
@@ -547,10 +556,10 @@ namespace Platformer
             if (timeRemaining < TimeSpan.Zero)
                 timeRemaining = TimeSpan.Zero;
 
-            world.Step((float) gameTime.ElapsedGameTime.TotalSeconds);
+			world.Step((float) gameTime.ElapsedGameTime.TotalSeconds);
         }
 
-        /// <summary>
+        /// <sum				mary>
         /// Animates each gem and checks to allows the player to collect them.
         /// </summary>
         private void UpdateGems(GameTime gameTime)
@@ -579,11 +588,18 @@ namespace Platformer
             {
                 enemy.Update(gameTime);
                 
-                if (enemy.PlayerIsOn)
+				if (enemy.PlayerIsOn && !enemy.PlayerIsAttacking)
                 {
                     //Make player move with tile if the player is on top of tile
                     player.Position += enemy.Velocity;
-                } 
+				}
+				else if(enemy.PlayerIsAttacking)
+				{
+					Console.WriteLine ("HIT");
+					OnEnemyKilled(enemy, Player);
+					player.Velocity -= new Vector2 (0, 1300);
+					player.Position -= new Vector2 (0, 20);
+				}
 
                 // Enemy collisions: if enemy collides with player - power up or not:
                 if (enemy.IsAlive && enemy.BoundingRectangle.Intersects(Player.BoundingRectangle))
@@ -592,6 +608,11 @@ namespace Platformer
                     {
                         OnEnemyKilled(enemy, Player);
                     }
+					else if(Player.IsDownwardThrusting)
+					{
+						Console.WriteLine ("Thrust HIT");
+						OnEnemyKilled(enemy, Player);
+					}
                     
                     else if(Player.IsInvulnerable)
                     {
@@ -601,6 +622,10 @@ namespace Platformer
 					{
 						player.Lives -= 1;
 						Player.IsInvulnerable = true;
+
+						player.Velocity -= new Vector2 (1000, 30);
+						player.Position -= new Vector2 (55, 10);
+
 					}
                 }
             }
@@ -727,6 +752,18 @@ namespace Platformer
             foreach(DrawablePhysicsObject crate in crates)
 			{
 				crate.Draw(spriteBatch);
+			}
+
+			//Clean up crates that fall beyond the level:
+			for (int currentCrate = crates.Count - 1; currentCrate >= 0; currentCrate--)
+			{
+				Vector2 pos = CoordinateHelper.ToScreen(crates[currentCrate].Body.Position);
+
+				if (pos.Y > spriteBatch.GraphicsDevice.Viewport.Height) 
+				{
+					world.RemoveBody(crates[currentCrate].Body);
+					crates.RemoveAt(currentCrate);
+				}
 			}
 
             Player.Draw(gameTime, spriteBatch);
