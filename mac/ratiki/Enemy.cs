@@ -85,6 +85,9 @@ namespace Platformer
         /// </summary>
         public bool PlayerIsOn { get; set; }
 
+
+		public bool PlayerIsAttacking { get; set; }
+
         //Sounds
         private SoundEffect killedSound;
 
@@ -221,7 +224,7 @@ namespace Platformer
         public void OnKilled(Player killedBy)
         {
             IsAlive = false;
-            killedSound.Play();
+           // killedSound.Play();
         }
     }
 }

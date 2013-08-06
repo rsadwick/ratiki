@@ -48,7 +48,7 @@ Global
 		{F1B3C026-0118-4626-8DAD-49403C5AED70}.ReleaseLinux|Any CPU.Build.0 = Debug|x86
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = ..\..\MonoGame\ProjectTemplates\MonoDevelop\MonoDevelop.MonoGame\MonoDevelop.MonoGame\MonoDevelop.MonoGame.MacOS.csproj
+		StartupItem = ..\..\..\Projects\crap\crap\ratiki.csproj
 		version = 1.0.0.0
 	EndGlobalSection
 EndGlobal
