@@ -85,6 +85,8 @@ namespace Platformer
         /// </summary>
         public bool PlayerIsOn { get; set; }
 
+		public bool PlayerIsAttackingTop { get; set; }
+
 
 		public bool PlayerIsAttacking { get; set; }
 

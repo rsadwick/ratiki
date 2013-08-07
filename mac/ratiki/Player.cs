@@ -628,6 +628,11 @@ namespace Platformer {
 
                 }
 
+				else if(!wasJumping && isDownwardThrust)
+				{
+					isDownwardThrust = false;
+				}
+
                 else {
                     // Reached the apex of the jump
                     jumpTime = 0.0f;
@@ -694,23 +699,38 @@ namespace Platformer {
             }
 
 			if(!isDownwardThrust){
-            //movable enemies:
+            	//movable enemies:
 	            foreach(var movableEnemy in level.enemies) {
 	                //reset flag to search for movableTile collisions:
 	                movableEnemy.PlayerIsOn = false;
-					movableEnemy.PlayerIsAttacking = false;
+					//movableEnemy.PlayerIsAttackingTop = false;
 
 	                //check to see if player is on enemy:
-					if (movableEnemy.IsAlive && (BoundingRectangle.Bottom == movableEnemy.BoundingRectangle.Top + 1) &&
+				if ( movableEnemy.IsAlive && (BoundingRectangle.Bottom == movableEnemy.BoundingRectangle.Top + 1) &&
 						(BoundingRectangle.Left >= movableEnemy.BoundingRectangle.Left - (BoundingRectangle.Width / 2) &&
 					 BoundingRectangle.Right <= movableEnemy.BoundingRectangle.Right + (BoundingRectangle.Width / 2))) 
 					{
 						movableEnemy.PlayerIsOn = true;
+			
 					}
 
 					bounds = HandleCollision(bounds, movableEnemy.Collision, movableEnemy.BoundingRectangle);
 				}	   
             }
+			else if(isDownwardThrust)
+			{
+				foreach(var movableEnemy in level.enemies) {
+					//movableEnemy.PlayerIsAttackingTop = false;
+					movableEnemy.PlayerIsOn = false;
+					if (movableEnemy.IsAlive && (BoundingRectangle.Bottom == movableEnemy.BoundingRectangle.Top + 1) &&
+				        (BoundingRectangle.Left >= movableEnemy.BoundingRectangle.Left - (BoundingRectangle.Width / 2) &&
+				 		BoundingRectangle.Right <= movableEnemy.BoundingRectangle.Right + (BoundingRectangle.Width / 2))) 
+					{
+						movableEnemy.PlayerIsAttackingTop = true;
+					}
+					bounds = HandleCollision(bounds, movableEnemy.Collision, movableEnemy.BoundingRectangle);
+				}
+			}
 
             // For each potentially colliding tile,
             for(int y = topTile; y <= bottomTile; ++y) {
