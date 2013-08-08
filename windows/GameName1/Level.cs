@@ -233,7 +233,7 @@ namespace Platformer
 
                 // Various enemies
                 case 'A':
-                    return LoadEnemyTile(x, y, "MonsterA", TileCollision.Passable);
+					return LoadEnemyTile(x, y, "MonsterA", TileCollision.Passable);
                 case 'B':
 					return LoadEnemyTile(x, y, "MonsterB", TileCollision.Passable);
                 case 'C':
@@ -588,30 +588,33 @@ namespace Platformer
             {
                 enemy.Update(gameTime);
                 
-				if (enemy.PlayerIsOn && !enemy.PlayerIsAttacking)
-                {
-                    //Make player move with tile if the player is on top of tile
-                    player.Position += enemy.Velocity;
-				}
-				else if(enemy.PlayerIsAttacking)
-				{
-					Console.WriteLine ("HIT");
+				//player is riding on enemy 
+				if (enemy.IsAlive && enemy.PlayerIsOn && !enemy.PlayerIsAttackingTop) {
+					//Make player move with tile if the player is on top of tile
+					player.Position += enemy.Velocity;
+				} 
+
+				//player is downward thrusting on top of an enemy:
+				else if (!enemy.PlayerIsOn && enemy.PlayerIsAttackingTop) {
+                    enemy.PlayerIsAttackingTop = false;
 					OnEnemyKilled(enemy, Player);
-					player.Velocity -= new Vector2 (0, 1300);
-					player.Position -= new Vector2 (0, 20);
+					player.Velocity -= new Vector2 (0, 2000);
+					player.Position -= new Vector2 (0, 50);
+
 				}
 
                 // Enemy collisions: if enemy collides with player - power up or not:
-                if (enemy.IsAlive && enemy.BoundingRectangle.Intersects(Player.BoundingRectangle))
+                if (enemy.IsAlive && Player.BoundingRectangle.Intersects(enemy.BoundingRectangle))
                 {
+
                     if (Player.IsPoweredUp)
                     {
                         OnEnemyKilled(enemy, Player);
                     }
-					else if(Player.IsDownwardThrusting)
+					else if(enemy.PlayerIsAttackingTop)
 					{
-						Console.WriteLine ("Thrust HIT");
-						OnEnemyKilled(enemy, Player);
+
+
 					}
                     
                     else if(Player.IsInvulnerable)
@@ -623,11 +626,12 @@ namespace Platformer
 						player.Lives -= 1;
 						Player.IsInvulnerable = true;
 
-						player.Velocity -= new Vector2 (1000, 30);
-						player.Position -= new Vector2 (55, 10);
+						//player.Velocity -= new Vector2 (1000, 30);
+						//player.Position -= new Vector2 (55, 10);
 
 					}
                 }
+
             }
         }
 

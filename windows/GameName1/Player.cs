@@ -175,10 +175,10 @@ namespace Platformer {
        // private float movement;
 
         // Jumping state
-
         private bool isJumping;
         private bool wasJumping;
 
+        //jump thrusting:
 		private bool isUpwardThust;
 		private bool isDownwardThrust;
 
@@ -320,7 +320,7 @@ namespace Platformer {
             isOnWall = false;
             isClimbing = false;
 			isUpwardThust = false;
-			isDownwardThrust = false;
+			//isDownwardThrust = false;
 
             //update physics rectangle:
             farseerRect.Position = new Vector2(position.X, position.Y - 20 );
@@ -376,9 +376,9 @@ namespace Platformer {
 				keyboardState.IsKeyDown (Keys.W) && keyboardState.IsKeyDown (Keys.Up);
 
 			isDownwardThrust = 
-				gamePadState.IsButtonDown (JumpButton) && keyboardState.IsKeyDown (Keys.Down) ||
-					keyboardState.IsKeyDown (Keys.Space) && keyboardState.IsKeyDown (Keys.Down) ||
-					keyboardState.IsKeyDown (Keys.W) && keyboardState.IsKeyDown (Keys.Down); 
+				gamePadState.IsButtonDown (JumpButton) && keyboardState.IsKeyDown (Keys.Down) && !IsCharged ||
+					keyboardState.IsKeyDown (Keys.Space) && keyboardState.IsKeyDown (Keys.Down) && !IsCharged ||
+					keyboardState.IsKeyDown (Keys.W) && keyboardState.IsKeyDown (Keys.Down) && !IsCharged; 
 
             isWallJumping =
                 gamePadState.IsButtonDown(JumpButton) && isOnWall ||
@@ -538,7 +538,7 @@ namespace Platformer {
                 }
 
             }
-            else if(isDucking) {
+            else if(isDucking && !isDownwardThrust) {
                 //Jump Booster:
                 holdTimer += (float) gameTime.ElapsedGameTime.TotalSeconds;
                 // Console.WriteLine("time : " + holdTimer);
@@ -593,9 +593,9 @@ namespace Platformer {
 
                     jumpTime += (float) gameTime.ElapsedGameTime.TotalSeconds;
                     
-					if (isUpwardThust && !IsCharged)
+					if (isUpwardThust)
 						sprite.PlayAnimation (upWardThrustAnimation);
-					else if (isDownwardThrust && !IsCharged) {
+					else if (isDownwardThrust) {
 						sprite.PlayAnimation (downWardThrustAnimation);
 					}
 					else
@@ -627,6 +627,11 @@ namespace Platformer {
                     velocityY = JumpLaunchVelocity * (1.0f + (float) Math.Pow(jumpTime / MaxJumpTime, JumpControlPower));
 
                 }
+
+				else if(!wasJumping && isDownwardThrust)
+				{
+					isDownwardThrust = false;
+				}
 
                 else {
                     // Reached the apex of the jump
@@ -671,7 +676,8 @@ namespace Platformer {
                 //check to see if player is on tile:
                 if((BoundingRectangle.Bottom == movableTile.BoundingRectangle.Top + 1) &&
                     (BoundingRectangle.Left >= movableTile.BoundingRectangle.Left - (BoundingRectangle.Width / 2) &&
-                    BoundingRectangle.Right <= movableTile.BoundingRectangle.Right + (BoundingRectangle.Width / 2))) {
+                    BoundingRectangle.Right <= movableTile.BoundingRectangle.Right + (BoundingRectangle.Width / 2))) 
+				{
                     movableTile.PlayerIsOn = true;
                 }
 
@@ -692,24 +698,41 @@ namespace Platformer {
                 bounds = HandleCollision(bounds, wallTile.Collision, wallTile.BoundingRectangle);
             }
 
-            //movable enemies:
-            foreach(var movableEnemy in level.enemies) {
-                //reset flag to search for movableTile collisions:
-                movableEnemy.PlayerIsOn = false;
-				movableEnemy.PlayerIsAttacking = false;
+			if(!isDownwardThrust){
+            	//movable enemies:
+	            foreach(var movableEnemy in level.enemies) {
+	                //reset flag to search for movableTile collisions:
+	                movableEnemy.PlayerIsOn = false;
+					//movableEnemy.PlayerIsAttackingTop = false;
 
-                //check to see if player is on enemy:
-				if (movableEnemy.IsAlive && (BoundingRectangle.Bottom == movableEnemy.BoundingRectangle.Top + 1) &&
-					(BoundingRectangle.Left >= movableEnemy.BoundingRectangle.Left - (BoundingRectangle.Width / 2) &&
-					BoundingRectangle.Right <= movableEnemy.BoundingRectangle.Right + (BoundingRectangle.Width / 2))) {
-					if (isDownwardThrust)
-						movableEnemy.PlayerIsAttacking = true;
-					else
+	                //check to see if player is on enemy:
+				if ( movableEnemy.IsAlive && (BoundingRectangle.Bottom == movableEnemy.BoundingRectangle.Top + 1) &&
+						(BoundingRectangle.Left >= movableEnemy.BoundingRectangle.Left - (BoundingRectangle.Width / 2) &&
+					 BoundingRectangle.Right <= movableEnemy.BoundingRectangle.Right + (BoundingRectangle.Width / 2))) 
+					{
 						movableEnemy.PlayerIsOn = true;
-				}
+			
+					}
 
-                bounds = HandleCollision(bounds, movableEnemy.Collision, movableEnemy.BoundingRectangle);
+					bounds = HandleCollision(bounds, movableEnemy.Collision, movableEnemy.BoundingRectangle);
+				}	   
             }
+			else if(isDownwardThrust)
+			{
+				foreach(var movableEnemy in level.enemies) {
+					//movableEnemy.PlayerIsAttackingTop = false;
+					movableEnemy.PlayerIsOn = false;
+                   
+					if (movableEnemy.IsAlive && (BoundingRectangle.Bottom == movableEnemy.BoundingRectangle.Top + 1) &&
+				        (BoundingRectangle.Left >= movableEnemy.BoundingRectangle.Left - (BoundingRectangle.Width ) &&
+				 		BoundingRectangle.Right <= movableEnemy.BoundingRectangle.Right + (BoundingRectangle.Width ))) 
+					{
+						movableEnemy.PlayerIsAttackingTop = true;
+                      
+					}
+					bounds = HandleCollision(bounds, movableEnemy.Collision, movableEnemy.BoundingRectangle);
+				}
+			}
 
             // For each potentially colliding tile,
             for(int y = topTile; y <= bottomTile; ++y) {
@@ -725,7 +748,7 @@ namespace Platformer {
                             float absDepthY = Math.Abs(depth.Y);
 
                             // Resolve the collision along the shallow axis.
-                            if(absDepthY < absDepthX || collision == TileCollision.Platform) {
+                            if(absDepthY < absDepthX || collision == TileCollision.Platform ) {
                                 // If we crossed the top of a tile, we are on the ground.
                                 //LADDER
                                 // If we crossed the top of a tile, we are on the ground.
@@ -768,6 +791,8 @@ namespace Platformer {
                                 Position = new Vector2(Position.X, Position.Y);
                                 bounds = BoundingRectangle;
                             }
+
+
                         }
                     }
                 }
@@ -784,12 +809,12 @@ namespace Platformer {
                 float absDepthX = Math.Abs(depth.X);
                 float absDepthY = Math.Abs(depth.Y);
                 // Resolve the collision along the shallow axis.
-                if(absDepthY < absDepthX || collision == TileCollision.Platform) {
+				if(absDepthY < absDepthX || collision == TileCollision.Platform) {
                     // If we crossed the top of a tile, we are on the ground.
                     if(previousBottom <= tileBounds.Top)
                         isOnGround = true;
                     // Ignore platforms, unless we are on the ground.
-                    if(collision == TileCollision.Impassable || IsOnGround) {
+					if(collision == TileCollision.Impassable || IsOnGround ) {
                         // Resolve the collision along the Y axis.
                         Position = new Vector2(Position.X, Position.Y + depth.Y);
                         // Perform further collisions with the new bounds.
