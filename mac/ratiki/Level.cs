@@ -588,17 +588,19 @@ namespace Platformer
             {
                 enemy.Update(gameTime);
                 
+				//player is riding on enemy 
 				if (enemy.PlayerIsOn && !enemy.PlayerIsAttackingTop) {
 					//Make player move with tile if the player is on top of tile
 					player.Position += enemy.Velocity;
 				} 
 
+				//player is downward thrusting on top of an enemy:
 				else if (!enemy.PlayerIsOn && enemy.PlayerIsAttackingTop) {
-					Console.WriteLine ("Thrust HIT");
+					enemy.PlayerIsAttackingTop = false;
 					OnEnemyKilled(enemy, Player);
 					player.Velocity -= new Vector2 (0, 2000);
 					player.Position -= new Vector2 (0, 50);
-					enemy.PlayerIsAttackingTop = false;
+
 				}
 
                 // Enemy collisions: if enemy collides with player - power up or not:

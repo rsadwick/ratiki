@@ -376,9 +376,9 @@ namespace Platformer {
 				keyboardState.IsKeyDown (Keys.W) && keyboardState.IsKeyDown (Keys.Up);
 
 			isDownwardThrust = 
-				gamePadState.IsButtonDown (JumpButton) && keyboardState.IsKeyDown (Keys.Down) ||
-					keyboardState.IsKeyDown (Keys.Space) && keyboardState.IsKeyDown (Keys.Down) ||
-					keyboardState.IsKeyDown (Keys.W) && keyboardState.IsKeyDown (Keys.Down); 
+				gamePadState.IsButtonDown (JumpButton) && keyboardState.IsKeyDown (Keys.Down) && !IsCharged ||
+					keyboardState.IsKeyDown (Keys.Space) && keyboardState.IsKeyDown (Keys.Down) && !IsCharged ||
+					keyboardState.IsKeyDown (Keys.W) && keyboardState.IsKeyDown (Keys.Down) && !IsCharged; 
 
             isWallJumping =
                 gamePadState.IsButtonDown(JumpButton) && isOnWall ||
@@ -538,7 +538,7 @@ namespace Platformer {
                 }
 
             }
-            else if(isDucking) {
+            else if(isDucking && !isDownwardThrust) {
                 //Jump Booster:
                 holdTimer += (float) gameTime.ElapsedGameTime.TotalSeconds;
                 // Console.WriteLine("time : " + holdTimer);
@@ -593,9 +593,9 @@ namespace Platformer {
 
                     jumpTime += (float) gameTime.ElapsedGameTime.TotalSeconds;
                     
-					if (isUpwardThust && !IsCharged)
+					if (isUpwardThust)
 						sprite.PlayAnimation (upWardThrustAnimation);
-					else if (isDownwardThrust && !IsCharged) {
+					else if (isDownwardThrust) {
 						sprite.PlayAnimation (downWardThrustAnimation);
 					}
 					else
