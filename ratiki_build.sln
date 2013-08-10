@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ratiki_build", "ratiki_build.csproj", "{CFFF2E0D-6E0B-4AF1-BA0D-F067E9796C79}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+		AppStore|x86 = AppStore|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CFFF2E0D-6E0B-4AF1-BA0D-F067E9796C79}.AppStore|x86.ActiveCfg = AppStore|x86
+		{CFFF2E0D-6E0B-4AF1-BA0D-F067E9796C79}.AppStore|x86.Build.0 = AppStore|x86
+		{CFFF2E0D-6E0B-4AF1-BA0D-F067E9796C79}.Debug|x86.ActiveCfg = Debug|x86
+		{CFFF2E0D-6E0B-4AF1-BA0D-F067E9796C79}.Debug|x86.Build.0 = Debug|x86
+		{CFFF2E0D-6E0B-4AF1-BA0D-F067E9796C79}.Release|x86.ActiveCfg = Release|x86
+		{CFFF2E0D-6E0B-4AF1-BA0D-F067E9796C79}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = ratiki_build.csproj
+	EndGlobalSection
+EndGlobal

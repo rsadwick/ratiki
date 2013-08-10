@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{CFFF2E0D-6E0B-4AF1-BA0D-F067E9796C79}</ProjectGuid>
+    <ProjectTypeGuids>{948B3504-5B70-4649-8FE4-BDE1FB46EC69};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ratiki_build</RootNamespace>
+    <MonoMacResourcePrefix>Resources</MonoMacResourcePrefix>
+    <AssemblyName>ratiki_build</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseSGen>false</UseSGen>
+    <PlatformTarget>x86</PlatformTarget>
+    <IncludeMonoRuntime>false</IncludeMonoRuntime>
+    <EnableCodeSigning>false</EnableCodeSigning>
+    <ConsolePause>false</ConsolePause>
+    <EnablePackageSigning>false</EnablePackageSigning>
+    <CreatePackage>false</CreatePackage>
+    <CodeSigningKey>Mac Developer</CodeSigningKey>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseSGen>false</UseSGen>
+    <LinkMode>Full</LinkMode>
+    <PlatformTarget>x86</PlatformTarget>
+    <IncludeMonoRuntime>true</IncludeMonoRuntime>
+    <EnableCodeSigning>true</EnableCodeSigning>
+    <ConsolePause>false</ConsolePause>
+    <EnablePackageSigning>false</EnablePackageSigning>
+    <CreatePackage>true</CreatePackage>
+    <CodeSigningKey>Developer ID Application</CodeSigningKey>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'AppStore|x86' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\x86\AppStore</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseSGen>false</UseSGen>
+    <IncludeMonoRuntime>true</IncludeMonoRuntime>
+    <PlatformTarget>x86</PlatformTarget>
+    <LinkMode>Full</LinkMode>
+    <EnableCodeSigning>true</EnableCodeSigning>
+    <ConsolePause>false</ConsolePause>
+    <CodeSigningKey>3rd Party Mac Developer Application</CodeSigningKey>
+    <PackageSigningKey>3rd Party Mac Developer Installer</PackageSigningKey>
+    <EnablePackageSigning>true</EnablePackageSigning>
+    <CreatePackage>true</CreatePackage>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="MonoMac">
+      <HintPath>bin\Debug\MonoMac.dll</HintPath>
+    </Reference>
+    <Reference Include="FarseerPhysicsEngine">
+      <HintPath>bin\Debug\FarseerPhysicsEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="Lidgren.Network">
+      <HintPath>bin\Debug\Lidgren.Network.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoGame.Framework">
+      <HintPath>bin\Debug\MonoGame.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Tao.Sdl">
+      <HintPath>bin\Debug\Tao.Sdl.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Resources\" />
+    <Folder Include="bin\" />
+    <Folder Include="Content\" />
+    <Folder Include="src\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Info.plist" />
+    <None Include="bin\Debug\.DS_Store" />
+    <None Include="bin\Debug\FarseerPhysicsEngine.dll" />
+    <None Include="bin\Debug\FarseerPhysicsXNA.dll" />
+    <None Include="bin\Debug\Lidgren.Network.dll" />
+    <None Include="bin\Debug\MonoGame.Framework.dll" />
+    <None Include="bin\Debug\MonoMac.dll" />
+    <None Include="bin\Debug\Tao.Sdl.dll" />
+    <None Include="Content\Levels\.DS_Store" />
+    <None Include="Content\Sprites\.DS_Store" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\Mono\MonoMac\v0.0\Mono.MonoMac.targets" />
+  <ItemGroup>
+    <Compile Include="src\AssemblyInfo.cs" />
+    <Compile Include="src\PlatformerGame.cs" />
+    <Compile Include="src\Program.cs" />
+    <Compile Include="src\level\Enemy.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
+    <Compile Include="src\level\Gem.cs" />
+    <Compile Include="src\level\Layer.cs" />
+    <Compile Include="src\level\Level.cs" />
+    <Compile Include="src\level\MovableTile.cs" />
+    <Compile Include="src\level\Tile.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
+    <Compile Include="src\level\WallTile.cs" />
+    <Compile Include="src\player\AnimationPlayer.cs" />
+    <Compile Include="src\player\Player.cs" />
+    <Compile Include="src\utils\Accelerometer.cs" />
+    <Compile Include="src\utils\Animation.cs" />
+    <Compile Include="src\utils\Circle.cs" />
+    <Compile Include="src\utils\CoordinateHelper.cs" />
+    <Compile Include="src\utils\DrawablePhysicsObject.cs" />
+    <Compile Include="src\utils\RectangleExtensions.cs" />
+    <Compile Include="src\utils\TouchCollectionExtensions.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Content\Backgrounds\Layer0_0.png" />
+    <Content Include="Content\Backgrounds\Layer0_0.xnb" />
+    <Content Include="Content\Backgrounds\Layer0_1.png" />
+    <Content Include="Content\Backgrounds\Layer0_1.xnb" />
+    <Content Include="Content\Backgrounds\Layer0_2.png" />
+    <Content Include="Content\Backgrounds\Layer0_2.xnb" />
+    <Content Include="Content\Backgrounds\Layer1_0.png" />
+    <Content Include="Content\Backgrounds\Layer1_0.xnb" />
+    <Content Include="Content\Backgrounds\Layer1_1.png" />
+    <Content Include="Content\Backgrounds\Layer1_1.xnb" />
+    <Content Include="Content\Backgrounds\Layer1_2.png" />
+    <Content Include="Content\Backgrounds\Layer1_2.xnb" />
+    <Content Include="Content\Backgrounds\Layer2_0.png" />
+    <Content Include="Content\Backgrounds\Layer2_0.xnb" />
+    <Content Include="Content\Backgrounds\Layer2_1.png" />
+    <Content Include="Content\Backgrounds\Layer2_1.xnb" />
+    <Content Include="Content\Backgrounds\Layer2_2.png" />
+    <Content Include="Content\Backgrounds\Layer2_2.xnb" />
+    <Content Include="Content\Fonts\Hud.xnb" />
+    <Content Include="Content\Levels\0.txt" />
+    <Content Include="Content\Levels\1.txt" />
+    <Content Include="Content\Levels\2.txt" />
+    <Content Include="Content\Levels\3.txt" />
+    <Content Include="Content\Overlays\Death.xnb" />
+    <Content Include="Content\Overlays\you_died.xnb" />
+    <Content Include="Content\Overlays\you_lose.xnb" />
+    <Content Include="Content\Overlays\you_win.xnb" />
+    <Content Include="Content\Sounds\BaddieDeath.xnb" />
+    <Content Include="Content\Sounds\Coin.xnb" />
+    <Content Include="Content\Sounds\ExitReached.xnb" />
+    <Content Include="Content\Sounds\GemCollected.xnb" />
+    <Content Include="Content\Sounds\Jump.wma" />
+    <Content Include="Content\Sounds\Jump.xnb" />
+    <Content Include="Content\Sounds\MonsterKilled.xnb" />
+    <Content Include="Content\Sounds\Music.wma" />
+    <Content Include="Content\Sounds\Music.xnb" />
+    <Content Include="Content\Sounds\PlayerDeath.xnb" />
+    <Content Include="Content\Sounds\PlayerFall.xnb" />
+    <Content Include="Content\Sounds\PlayerJump.xnb" />
+    <Content Include="Content\Sounds\PlayerKilled.xnb" />
+    <Content Include="Content\Sounds\Powerup.xnb" />
+    <Content Include="Content\Sounds\StageCleared.xnb" />
+    <Content Include="Content\Sounds\death.wma" />
+    <Content Include="Content\Sounds\death.xnb" />
+    <Content Include="Content\Sounds\jumper.xnb" />
+    <Content Include="Content\Sounds\overworld.wma" />
+    <Content Include="Content\Sounds\overworld.xnb" />
+    <Content Include="Content\Sounds\secret.xnb" />
+    <Content Include="Content\Sprites\MonsterA\Idle.xnb" />
+    <Content Include="Content\Sprites\MonsterA\Run.xnb" />
+    <Content Include="Content\Sprites\MonsterA\Run2.xnb" />
+    <Content Include="Content\Sprites\MonsterA\death.xnb" />
+    <Content Include="Content\Sprites\MonsterB\Idle.xnb" />
+    <Content Include="Content\Sprites\MonsterB\Run.xnb" />
+    <Content Include="Content\Sprites\MonsterC\Idle.xnb" />
+    <Content Include="Content\Sprites\MonsterC\Run.xnb" />
+    <Content Include="Content\Sprites\MonsterD\Idle.xnb" />
+    <Content Include="Content\Sprites\MonsterD\Run.xnb" />
+    <Content Include="Content\Sprites\Player\Celebrate.xnb" />
+    <Content Include="Content\Sprites\Player\Die.xnb" />
+    <Content Include="Content\Sprites\Player\Duck.xnb" />
+    <Content Include="Content\Sprites\Player\Idle.xnb" />
+    <Content Include="Content\Sprites\Player\Idle2.xnb" />
+    <Content Include="Content\Sprites\Player\Jump.xnb" />
+    <Content Include="Content\Sprites\Player\Jump2.xnb" />
+    <Content Include="Content\Sprites\Player\Run.xnb" />
+    <Content Include="Content\Sprites\Player\Run2.xnb" />
+    <Content Include="Content\Sprites\Player\Up.xnb" />
+    <Content Include="Content\Sprites\Player\climb_new.png" />
+    <Content Include="Content\Sprites\Player\down_thrust.png" />
+    <Content Include="Content\Sprites\Player\duck.png" />
+    <Content Include="Content\Sprites\Player\duck_new.png" />
+    <Content Include="Content\Sprites\Player\idle.psd" />
+    <Content Include="Content\Sprites\Player\idle_new.png" />
+    <Content Include="Content\Sprites\Player\jump.psd" />
+    <Content Include="Content\Sprites\Player\jump_new.png" />
+    <Content Include="Content\Sprites\Player\run_new.png" />
+    <Content Include="Content\Sprites\Player\uo_thrust.png" />
+    <Content Include="Content\Sprites\Player\up_new.png" />
+    <Content Include="Content\Sprites\Player\up_thrust.png" />
+    <Content Include="Content\Sprites\Player\walk.psd" />
+    <Content Include="Content\Sprites\Player\win_new.png" />
+    <Content Include="Content\Tiles\BlockA0.xnb" />
+    <Content Include="Content\Tiles\BlockA1.xnb" />
+    <Content Include="Content\Tiles\BlockA2.xnb" />
+    <Content Include="Content\Tiles\BlockA3.xnb" />
+    <Content Include="Content\Tiles\BlockA4.xnb" />
+    <Content Include="Content\Tiles\BlockA5.xnb" />
+    <Content Include="Content\Tiles\BlockA6.xnb" />
+    <Content Include="Content\Tiles\BlockB0.xnb" />
+    <Content Include="Content\Tiles\BlockB1.xnb" />
+    <Content Include="Content\Tiles\Exit.xnb" />
+    <Content Include="Content\Tiles\Platform.xnb" />
+    <Content Include="Content\Tiles\grass.png" />
+    <Content Include="Content\Sprites\Coin.xnb" />
+    <Content Include="Content\Sprites\Gem.xnb" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterfaceDefinition Include="MainMenu.xib" />
+  </ItemGroup>
+</Project>
