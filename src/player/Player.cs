@@ -78,7 +78,6 @@ namespace Platformer {
         protected float invulnerableTimer = 0.0f;
 
         protected bool IsCharged;
-        protected bool IsPowerJump;
         //Array of colors to cycle through for power up animation:
         private readonly Color[] poweredUpColors = {
                                                        Color.Peru,

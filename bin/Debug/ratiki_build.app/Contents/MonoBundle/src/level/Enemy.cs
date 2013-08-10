@@ -78,7 +78,6 @@ namespace Platformer
         private Animation idleAnimation;
         private Animation deathAnimation;
         private AnimationPlayer sprite;
-        private Vector2 origin;
 
         /// <summary>
         /// Gets whether or not the player's feet are on the MovableTile.

@@ -49,6 +49,7 @@ namespace Platformer
         private List<DrawablePhysicsObject> crates = new List<DrawablePhysicsObject>();
         private List<DrawablePhysicsObject> floors = new List<DrawablePhysicsObject>();
 
+		//Keep the farseer World inside of level 
         public World World {
             get { return world; }
         }
