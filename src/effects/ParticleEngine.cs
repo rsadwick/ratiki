@@ -1,9 +1,6 @@
 #region File Description
 //-----------------------------------------------------------------------------
 // ParticleEngine.cs
-//
-// Microsoft XNA Community Game Platform
-// Copyright (C) Microsoft Corporation. All rights reserved.
 //-----------------------------------------------------------------------------
 #endregion
 
@@ -77,10 +74,12 @@ namespace Platformer
 
 		public void Draw(SpriteBatch spriteBatch)
 		{
+			spriteBatch.GraphicsDevice.BlendState = BlendState.Additive;
 			for (int index = 0; index < particles.Count; index++)
 			{
 				particles[index].Draw(spriteBatch);
 			}
+			spriteBatch.GraphicsDevice.BlendState = BlendState.AlphaBlend;
 		}
 	}
 }
