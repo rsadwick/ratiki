@@ -52,11 +52,12 @@ namespace Platformer
 			Color color = new Color(
 				(float)random.NextDouble(),
 				(float)random.NextDouble(),
-				(float)random.NextDouble());
+				(float)random.NextDouble(),
+				0.3f);
 			float size = (float)random.NextDouble();
-			int ttl = 6 + random.Next(12);
+			int life = 12 + random.Next(24);
 
-			return new Particle(texture, position, velocity, angle, angularVelocity, color, size, ttl);
+			return new Particle(texture, position, velocity, angle, angularVelocity, color, size, life);
 		}
 
 		public void RemoveParticle()

@@ -97,9 +97,6 @@ namespace Platformer
 
         private SoundEffect exitReachedSound;
 
-		private Texture2D sprite;
-
-
         #region Loading
 
         /// <summary>

@@ -49,11 +49,21 @@ namespace Platformer
             get { return collision; }
             set { collision = value; }
         }
+
+
+		public float MoveSpeed
+		{
+			get { return moveSpeed; }
+			set { moveSpeed = value; }
+		}
+
+		private float moveSpeed = 120.0f;
+
         private TileCollision collision;
         private Rectangle localBounds;
         private float waitTime;
         private const float MaxWaitTime = 0.1f;
-        private const float MoveSpeed = 120.0f;
+       
         public MovableTile(Level level, Vector2 position, TileCollision collision)
         {
             this.level = level;
@@ -74,6 +84,8 @@ namespace Platformer
         }
         public void Update(GameTime gameTime)
         {
+			if (!PlayerIsOn)
+				moveSpeed = 120.0f;
             float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
             // Calculate tile position based on the side we are moving towards.
             float posX = Position.X + localBounds.Width / 2 * (int)direction;
@@ -101,7 +113,7 @@ namespace Platformer
                 else
                 {
                     // Move in the current direction.
-                    velocity = new Vector2((int)direction * MoveSpeed * elapsed, 0.0f);
+                    velocity = new Vector2((int)direction * moveSpeed * elapsed, 0.0f);
                     position = position + velocity;
                 }
             }
@@ -116,7 +128,7 @@ namespace Platformer
                         if (BoundingRectangle.Intersects(movableTile.BoundingRectangle))
                         {
                             direction = (FaceDirection)(-(int)direction);
-                            velocity = new Vector2((int)direction * MoveSpeed * elapsed, 0.0f);
+							velocity = new Vector2((int)direction * moveSpeed * elapsed, 0.0f);
                         }
                     }
                 }

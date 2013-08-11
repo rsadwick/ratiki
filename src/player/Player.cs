@@ -48,7 +48,6 @@ namespace Platformer {
 		//Particle engine
 		private ParticleEngine particleEngine;
 
-
         public Level Level {
             get { return level; }
         }
@@ -336,7 +335,6 @@ namespace Platformer {
             //update physics rectangle:
             farseerRect.Position = new Vector2(position.X, position.Y - 20 );
 
-
 			//Particles
 			if (IsCharged) {
 				particleEngine.EmitterLocation = new Vector2 (position.X, position.Y);
@@ -344,8 +342,6 @@ namespace Platformer {
 			} else {
 				particleEngine.RemoveParticle();
 			}
-
-
         }
 
         /// <summary>
@@ -703,6 +699,12 @@ namespace Platformer {
                     BoundingRectangle.Right <= movableTile.BoundingRectangle.Right + (BoundingRectangle.Width / 2))) 
 				{
                     movableTile.PlayerIsOn = true;
+
+					if (IsCharged) {
+						movableTile.MoveSpeed = 120.0f * 3;
+					} else {
+						movableTile.MoveSpeed = 120.0f;
+					}
                 }
 
                 bounds = HandleCollision(bounds, movableTile.Collision, movableTile.BoundingRectangle);
