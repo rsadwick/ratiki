@@ -89,6 +89,8 @@
     <Folder Include="bin\" />
     <Folder Include="Content\" />
     <Folder Include="src\" />
+    <Folder Include="Content\Particles\" />
+    <Folder Include="src\effects\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -128,6 +130,8 @@
     <Compile Include="src\utils\DrawablePhysicsObject.cs" />
     <Compile Include="src\utils\RectangleExtensions.cs" />
     <Compile Include="src\utils\TouchCollectionExtensions.cs" />
+    <Compile Include="src\effects\Particle.cs" />
+    <Compile Include="src\effects\ParticleEngine.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\Backgrounds\Layer0_0.png" />
@@ -226,6 +230,9 @@
     <Content Include="Content\Tiles\grass.png" />
     <Content Include="Content\Sprites\Coin.xnb" />
     <Content Include="Content\Sprites\Gem.xnb" />
+    <Content Include="Content\Particles\circle.png" />
+    <Content Include="Content\Particles\diamond.png" />
+    <Content Include="Content\Particles\star.png" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="MainMenu.xib" />

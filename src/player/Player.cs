@@ -14,6 +14,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Input.Touch;
 using FarseerPhysics.Dynamics;
+using System.Collections.Generic;
 
 namespace Platformer {
     /// <summary>
@@ -43,6 +44,10 @@ namespace Platformer {
         private SoundEffect jumpSound;
         private SoundEffect fallSound;
         private DrawablePhysicsObject farseerRect;
+
+		//Particle engine
+		private ParticleEngine particleEngine;
+
 
         public Level Level {
             get { return level; }
@@ -250,7 +255,14 @@ namespace Platformer {
 
             //farseer body on player:
 			farseerRect = new DrawablePhysicsObject(this.level.World, "Tiles/grass", new Vector2(width, height), 0.1f, this.level);
-            farseerRect.Body.BodyType = BodyType.Static; 
+            farseerRect.Body.BodyType = BodyType.Static;
+
+			//Particles:
+			List<Texture2D> textures = new List<Texture2D>();
+			textures.Add(Level.Content.Load<Texture2D>("Particles/circle"));
+			textures.Add(Level.Content.Load<Texture2D>("Particles/star"));
+			textures.Add(Level.Content.Load<Texture2D>("Particles/diamond"));
+			particleEngine = new ParticleEngine(textures, new Vector2(position.X, position.Y));
         }
 
         /// <summary>
@@ -323,6 +335,17 @@ namespace Platformer {
 
             //update physics rectangle:
             farseerRect.Position = new Vector2(position.X, position.Y - 20 );
+
+
+			//Particles
+			if (IsCharged) {
+				particleEngine.EmitterLocation = new Vector2 (position.X, position.Y);
+				particleEngine.Update ();
+			} else {
+				particleEngine.RemoveParticle();
+			}
+
+
         }
 
         /// <summary>
@@ -547,6 +570,7 @@ namespace Platformer {
                 }
                 else {
                     IsCharged = false;
+
                 }
             }
 
@@ -557,6 +581,7 @@ namespace Platformer {
                 MaxJumpTime = 0.40f;
                 JumpControlPower = 0.09f;
                 invulnerableTimer = 0.0f;
+
 
             }
 
@@ -876,6 +901,8 @@ namespace Platformer {
                 float t = ((float) gameTime.TotalGameTime.TotalSeconds + holdTimer / HOLD_TIMESPAN) * 20.0f;
                 int colorIndex = (int) t % chargedUpColors.Length;
                 color = chargedUpColors[colorIndex];
+
+
             }
             else if(IsInvulnerable) {
                 float t = ((float) gameTime.TotalGameTime.TotalSeconds + powerUpTime / DAMAGE_INVULNERABLE_TIMESPAN) * 20.0f;
@@ -888,8 +915,11 @@ namespace Platformer {
             
             //show farseer rect:
             //farseerRect.Draw(spriteBatch);
+			//particles:
+			particleEngine.Draw (spriteBatch);
             // Draw that sprite.
             sprite.Draw(gameTime, spriteBatch, Position, flip, color);
+
         }
 
         public void PowerUp() {
