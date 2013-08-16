@@ -1,4 +1,4 @@
-﻿#region File Description
+#region File Description
 //-----------------------------------------------------------------------------
 // Level.cs
 //
@@ -97,6 +97,8 @@ namespace Platformer
 
         private SoundEffect exitReachedSound;
 
+        private DrawablePhysicsObject baser;
+
         #region Loading
 
         /// <summary>
@@ -129,6 +131,57 @@ namespace Platformer
 
             // Load sounds.
             exitReachedSound = Content.Load<SoundEffect>("Sounds/StageCleared");
+
+            baser = new DrawablePhysicsObject(world, "Tiles/grass.png", new Vector2(200.0f, 55.0f), 0.1f, this);
+            baser.Position = new Vector2(55, 400);
+            baser.Body.BodyType = BodyType.Static;
+
+
+        }
+
+        public void SpawnTrampoline()
+        {
+            // Use two line joints (a sort of springs) to create a trampoline
+            DrawablePhysicsObject trampolinePaddle = new DrawablePhysicsObject
+            (
+                world,
+                "Tiles/ladder_mid.png",
+                new Vector2(32, 32),
+                10,
+                this
+            );
+
+            trampolinePaddle.Body.SleepingAllowed = false;
+
+            trampolinePaddle.Position = new Vector2(baser.Position.X - 30, baser.Position.Y - 3);
+
+            var l = JointFactory.CreateLineJoint
+            (
+                baser.Body,
+                trampolinePaddle.Body,
+                CoordinateHelper.ToWorld(trampolinePaddle.Position - new Vector2(64, 0)),
+                Vector2.UnitY
+            );
+
+            l.CollideConnected = true;
+            l.Frequency = 2.0f;
+            l.DampingRatio = 0.05f;
+
+            var r = JointFactory.CreateLineJoint
+            (
+                baser.Body,
+                trampolinePaddle.Body,
+                CoordinateHelper.ToWorld(trampolinePaddle.Position + new Vector2(64, 0)),
+                Vector2.UnitY
+            );
+
+            r.CollideConnected = true;
+            r.Frequency = 2.0f;
+            r.DampingRatio = 0.05f;
+
+            world.AddJoint(l);
+            world.AddJoint(r);
+            crates.Add(trampolinePaddle);
         }
 
 		public void SpawnCrate()
@@ -139,8 +192,12 @@ namespace Platformer
             crate.Body.BodyType = BodyType.Dynamic;
             crate.Body.Friction = 20.0f;
             crate.Body.Restitution = 0.3f;
+            crate.Body.Mass = 4.4f;
 			crate.Body.SleepingAllowed = false;
 			crates.Add(crate);
+
+            
+
 		}
 
         /// <summary>
@@ -769,6 +826,7 @@ namespace Platformer
 			}
 
             Player.Draw(gameTime, spriteBatch);
+            baser.Draw(spriteBatch);
 
 
             foreach (Enemy enemy in enemies)
