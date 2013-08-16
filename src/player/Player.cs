@@ -381,6 +381,11 @@ namespace Platformer {
                 level.SpawnCrate();
             }
 
+            //spawn crates for testing:
+            if(keyboardState.IsKeyDown(Keys.O)) {
+                level.SpawnTrampoline();
+            }
+
             // Check if the player wants to jump.
             isJumping =
 				gamePadState.IsButtonDown(JumpButton) ||
