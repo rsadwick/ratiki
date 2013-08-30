@@ -145,9 +145,9 @@ namespace Platformer
             DrawablePhysicsObject trampolinePaddle = new DrawablePhysicsObject
             (
                 world,
-                "Tiles/ladder_mid.png",
+                "Tiles/grass.png",
                 new Vector2(32, 32),
-                10,
+                0.1f,
                 this
             );
 
@@ -653,9 +653,8 @@ namespace Platformer
 				else if (!enemy.PlayerIsOn && enemy.PlayerIsAttackingTop) {
 					enemy.PlayerIsAttackingTop = false;
 					OnEnemyKilled(enemy, Player);
-					player.Velocity -= new Vector2 (0, 2000);
-					player.Position -= new Vector2 (0, 50);
-
+					player.Velocity -= new Vector2 (0, 1000);
+					player.Position -= new Vector2 (0, 50 );
 				}
 
                 // Enemy collisions: if enemy collides with player - power up or not:

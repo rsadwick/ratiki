@@ -54,6 +54,7 @@ namespace Platformer {
             Body = BodyFactory.CreateRectangle(world, size.X * CoordinateHelper.pixelToUnit, size.Y * CoordinateHelper.pixelToUnit, 1);
             Body.BodyType = BodyType.Dynamic;
             this.Size = size;
+			Body.Mass = mass;
             this.texture = level.Content.Load<Texture2D>(texture);
         }
 

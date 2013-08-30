@@ -253,8 +253,9 @@ namespace Platformer {
             powerUpSound = Level.Content.Load<SoundEffect>("Sounds/Secret");
 
             //farseer body on player:
-			farseerRect = new DrawablePhysicsObject(this.level.World, "Tiles/grass", new Vector2(width, height), 0.1f, this.level);
+			farseerRect = new DrawablePhysicsObject(this.level.World, "Tiles/grass", new Vector2(width, height), 4.1f, this.level);
             farseerRect.Body.BodyType = BodyType.Static;
+
 
 			//Particles:
 			List<Texture2D> textures = new List<Texture2D>();
@@ -704,9 +705,14 @@ namespace Platformer {
                     BoundingRectangle.Right <= movableTile.BoundingRectangle.Right + (BoundingRectangle.Width / 2))) 
 				{
                     movableTile.PlayerIsOn = true;
-
+					//player is charged, speed up plaform and change direction according to player direction:
 					if (IsCharged) {
 						movableTile.MoveSpeed = 120.0f * 3;
+						if(flip == SpriteEffects.FlipHorizontally)
+							movableTile.Direction = FaceDirection.Right;
+						else
+							movableTile.Direction = FaceDirection.Left;
+
 					} else {
 						movableTile.MoveSpeed = 120.0f;
 					}
